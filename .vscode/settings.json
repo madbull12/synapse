@@ -1,0 +1,9 @@
+{
+  "prettier.ignorePath": "",
+  "prettier.requireConfig": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
