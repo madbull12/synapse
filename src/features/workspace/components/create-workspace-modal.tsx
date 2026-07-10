@@ -1,8 +1,14 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import * as React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus } from "lucide-react";
+
 import {
   Credenza,
   CredenzaBody,
-  CredenzaClose,
   CredenzaContent,
   CredenzaDescription,
   CredenzaFooter,
@@ -10,32 +16,128 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "@/components/ui/credenza";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { ModalFooter } from "@/components/ui/credenza-footer";
 
-const CreateWorkspaceModal = () => {
+// 1. Define the Validation Schema
+const createWorkspaceSchema = z.object({
+  name: z
+    .string()
+    .min(3, "Workspace name must be at least 3 characters.")
+    .max(32, "Workspace name must be at most 32 characters.")
+    .refine(
+      (val) => val.trim().length > 0,
+      "Workspace name cannot be empty or just spaces.",
+    ),
+});
+
+type CreateWorkspaceFormData = z.infer<typeof createWorkspaceSchema>;
+
+export default function CreateWorkspaceModal() {
+  const [open, setOpen] = React.useState(false);
+
+  // 2. Initialize React Hook Form
+  const form = useForm<CreateWorkspaceFormData>({
+    resolver: zodResolver(createWorkspaceSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  const isLoading = form.formState.isSubmitting;
+
+  // 3. Submit Handler matching your Go Backend contract
+  async function onSubmit(data: CreateWorkspaceFormData) {
+    try {
+      console.log("Submitting workspace payload to Go backend:", data);
+
+      // Simulate API network latency
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      form.reset();
+      setOpen(false);
+    } catch (error) {
+      console.error("Failed to create workspace:", error);
+    }
+  }
+
   return (
-    <Credenza>
-      <CredenzaTrigger asChild>
-        <Button>Open modal</Button>
-      </CredenzaTrigger>
-      <CredenzaContent>
+    <Credenza open={open} onOpenChange={setOpen}>
+      {/* Trigger Button with Tooltip Integration */}
+      <Tooltip delayDuration={200}>
+        <CredenzaTrigger asChild>
+          <TooltipTrigger className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200 cursor-pointer">
+            <Plus className="size-5" />
+          </TooltipTrigger>
+        </CredenzaTrigger>
+        <TooltipContent side="right" sideOffset={12}>
+          <p className="text-xs">Add a workspace</p>
+        </TooltipContent>
+      </Tooltip>
+
+      <CredenzaContent className="sm:max-w-[425px]">
         <CredenzaHeader>
-          <CredenzaTitle>Credenza</CredenzaTitle>
+          <CredenzaTitle>Create a workspace</CredenzaTitle>
           <CredenzaDescription>
-            A responsive modal component for shadcn/ui.
+            Workspaces securely isolate channels, files, direct messages, and
+            members.
           </CredenzaDescription>
         </CredenzaHeader>
-        <CredenzaBody>
-          This component is built using shadcn/ui&apos;s dialog and drawer
-          component, which is built on top of Vaul.
-        </CredenzaBody>
-        <CredenzaFooter>
-          <CredenzaClose asChild>
-            <Button>Close</Button>
-          </CredenzaClose>
-        </CredenzaFooter>
+
+        {/* Form Body Context */}
+        <form id="create-workspace-form" onSubmit={form.handleSubmit(onSubmit)}>
+          <CredenzaBody className="pb-4">
+            <FieldGroup>
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="workspace-name">
+                      Workspace name
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="workspace-name"
+                      disabled={isLoading}
+                      placeholder="e.g. Acme Corp, Side Hustle"
+                      autoComplete="off"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    <FieldDescription>
+                      This is the display name of your shared ecosystem.
+                    </FieldDescription>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </CredenzaBody>
+        </form>
+
+        {/* Unified Footer Actions Controls */}
+        <ModalFooter
+          formId="create-workspace-form"
+          submitLabel={isLoading ? "Creating..." : "Create Workspace"}
+          cancelLabel="Cancel"
+          isLoading={isLoading}
+          onCancel={() => setOpen(false)}
+        />
       </CredenzaContent>
     </Credenza>
   );
-};
-
-export default CreateWorkspaceModal;
+}

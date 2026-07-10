@@ -32,6 +32,7 @@ import { WorkspaceRail } from "@/features/workspace/components/workspace-rail";
 import CreateChannelModal from "@/features/channel/components/create-channel-modal";
 import ChannelList from "@/features/channel/components/channel-list";
 import DirectMessageList from "@/features/channel/components/direct-message-list";
+import WorkspaceDropdown from "@/features/workspace/components/workspace-dropdown";
 
 export function AppSidebar() {
   const [isChannelCollapsed, setIsChannelCollapsed] = useState(true);
@@ -47,29 +48,7 @@ export function AppSidebar() {
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
           <SidebarHeader className="p-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="h-12 w-full flex items-center justify-start gap-2 px-2 hover:bg-muted/60"
-                >
-                  <div className="bg-primary text-primary-foreground rounded-lg size-8 shrink-0 grid place-items-center font-bold">
-                    M
-                  </div>
-                  <span className="font-semibold text-foreground truncate">
-                    My Workspace
-                  </span>
-                  <ChevronDown className="ml-auto size-4 text-muted-foreground shrink-0" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
-                  <DropdownMenuItem>Settings</DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <WorkspaceDropdown />
           </SidebarHeader>
 
           <Separator className="opacity-60" />

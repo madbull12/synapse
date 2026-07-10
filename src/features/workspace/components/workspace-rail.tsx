@@ -11,6 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import CreateWorkspaceModal from "@/features/workspace/components/create-workspace-modal";
 
 // Mock workspaces data layer contract
 const WORKSPACES_MOCK = [
@@ -68,17 +69,7 @@ export function WorkspaceRail() {
         })}
       </div>
 
-      {/* Global Workspace Action Trigger Trigger */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200">
-            <Plus className="size-5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={12}>
-          <p className="text-xs">Add a workspace</p>
-        </TooltipContent>
-      </Tooltip>
+      <CreateWorkspaceModal />
     </div>
   );
 }
