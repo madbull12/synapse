@@ -1,41 +1,60 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# ==========================================
+# System & Editor Junk
+# ==========================================
 .DS_Store
-*.pem
+.DS_Store?
+*_local
+Thumbs.db
+.vscode/
+!.vscode/settings.json # Keep settings.json so Go workspace support works for everyone
 
-# debug
+# ==========================================
+# Client (Next.js & pnpm)
+# ==========================================
+client/node_modules/
+client/.next/
+client/out/
+client/build/
+client/dist/
+client/next-env.d.ts
+client/*.tsbuildinfo
+
+# pnpm specific
+client/.pnpm-debug.log*
+pnpm-debug.log*
+
+# ==========================================
+# Server (Go Backend)
+# ==========================================
+# Compiled binaries
+server/bin/
+server/cmd/api/api # If you build local executables here
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+server/coverage.txt
+server/profile.out
+
+# ==========================================
+# Environments & Secrets (CRITICAL)
+# ==========================================
+# Never commit your private keys or DB credentials
+.env
+.env.*
+!.env.example # Allow committing placeholder files
+server/.env
+server/.env.*
+client/.env
+client/.env.*
+
+# ==========================================
+# Misc / Debug Logs
+# ==========================================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+/coverage

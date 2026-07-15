@@ -1,4 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import WorkspaceHeader from "@/features/workspace/components/workspace-header";
 import { AppSidebar } from "@/layout/app-sidebar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <SidebarTrigger />
           </div> */}
 
-          <div className="flex-1 overflow-y-auto p-6 bg-background">
+          <div className="flex-1 overflow-y-auto bg-background">
+            <WorkspaceHeader />
             {children}
           </div>
         </main>
