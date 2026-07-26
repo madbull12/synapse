@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  # 1. PostgreSQL Database Service
+  postgres_db:
+    image: postgres:16-alpine
+    container_name: synapse_db_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: synapse_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d synapse_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Go API Server Service
+  api_server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: synapse_api_container
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./server:/app
+      - go_modules:/go/pkg/mod # Cache dependencies so container startups are instant
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:1234@postgres_db:5432/synapse_db?sslmode=disable
+      - JWT_SECRET=yr62DiVQc0LMD8qTncyD4yDJQHIV7VZJlbB4cgHext2I
+    depends_on:
+      postgres_db:
+        condition: service_healthy # Wait for postgres to boot completely before starting Go
+
+volumes:
+  pgdata:
+  go_modules:

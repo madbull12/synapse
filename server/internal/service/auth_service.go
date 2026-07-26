@@ -13,6 +13,7 @@ import (
 type AuthService interface {
 	Register(ctx context.Context, name, email, password string) (string, error)
 	Login(ctx context.Context, email, password string) (string, error)
+	Logout(ctx context.Context, token string) error
 }
 
 type authService struct {
@@ -60,4 +61,9 @@ func (s *authService) Login(ctx context.Context, email, password string) (string
 
 	// 3. Issue the authentic session payload
 	return utils.GenerateToken(user.ID, user.Email)
+}
+
+func (s *authService) Logout(ctx context.Context, token string) error {
+	
+	return nil
 }

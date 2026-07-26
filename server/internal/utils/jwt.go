@@ -8,12 +8,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
-var secretKey = os.Getenv("JWT_SECRET")
 
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
 	Email  string    `json:"email"`
 	jwt.RegisteredClaims
+}
+
+
+func getSecretKey() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	// if secret == "" {
+	// 	// Fallback for safety during local dev if env is missing
+	// 	return []byte("yr62DiVQc0LMD8qTncyD4yDJQHIV7VZJlbB4cgHext2I")
+	// }
+	return []byte(secret)
 }
 
 func GenerateToken(userID uuid.UUID, email string) (string, error) {
@@ -28,16 +37,16 @@ func GenerateToken(userID uuid.UUID, email string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString(getSecretKey())
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Enforce validation of the exact signing algorithm family expected
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected cryptographic signing method")
 		}
-		return secretKey, nil
+		// Return as []byte, NOT string!
+		return getSecretKey(), nil
 	})
 
 	if err != nil {
@@ -47,7 +56,6 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		return nil, errors.New("malformed authentication token")
 	}
 
-	// Cast payload fields back into our native structural type definition
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 		return claims, nil
 	}
