@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import MarketingHeader from "./header";
+import { Button } from "@/components/ui/button";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -102,12 +103,10 @@ const HeroMarketing = () => {
             animate="visible"
             className="mt-10 flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0"
           >
-            <button className="h-12 rounded-full bg-white px-8 text-base font-medium text-black transition hover:bg-white/90">
-              Try
-            </button>
-            <button className="h-12 rounded-full border border-gray-600 px-8 text-base font-medium text-white transition hover:bg-white/10">
+            <Button className="h-10 px-8">Try</Button>
+            <Button className="h-10 px-8" variant="outline">
               View API Specs
-            </button>
+            </Button>
           </motion.div>
 
           <motion.div

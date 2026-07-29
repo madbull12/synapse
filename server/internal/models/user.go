@@ -14,3 +14,11 @@ type User struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+type RefreshToken struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null;index"`
+	Token     string    `gorm:"type:text;not null;uniqueIndex"`
+	ExpiresAt time.Time `gorm:"not null"`
+	CreatedAt time.Time
+}

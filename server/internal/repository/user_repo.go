@@ -10,6 +10,8 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
+	SaveRefreshToken(ctx context.Context, token *models.RefreshToken) error
+	DeleteRefreshToken(ctx context.Context, token string) error
 }
 
 type userRepo struct {
@@ -29,6 +31,15 @@ func (u *userRepo) FindByEmail(ctx context.Context, email string) (*models.User,
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (u *userRepo) SaveRefreshToken(ctx context.Context, token *models.RefreshToken) error {
+	// Save the refresh token to the database
+	return u.db.WithContext(ctx).Create(token).Error
+}
+
+func (u *userRepo) DeleteRefreshToken(ctx context.Context, token string) error {
+	return u.db.WithContext(ctx).Where("token = ?", token).Delete(&models.RefreshToken{}).Error
 }
 
 func NewUserRepository(db *gorm.DB) UserRepository {

@@ -28,14 +28,14 @@ func (h *AuthHandler) HandleLogin(c *gin.Context) {
 		return
 	}
 
-	token, err := h.srv.Login(c.Request.Context(), req.Email, req.Password)
+	accessToken,refreshToken, err := h.srv.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.SetCookie("synapse_session", token, 86400, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "Login authorization granted", "token": token})
+	c.SetCookie("synapse_session", refreshToken, 86400, "/", "", false, true)
+	c.JSON(http.StatusOK, gin.H{"message": "Login authorization granted", "access_token": accessToken, "refresh_token": refreshToken})
 }
 
 func (h *AuthHandler) HandleRegister(c *gin.Context) {
@@ -45,24 +45,24 @@ func (h *AuthHandler) HandleRegister(c *gin.Context) {
 		return
 	}
 
-	token, err := h.srv.Register(c.Request.Context(), req.Name, req.Email, req.Password)
+	accessToken, refreshToken, err := h.srv.Register(c.Request.Context(), req.Name, req.Email, req.Password)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.SetCookie("synapse_session", token, 86400, "/", "", false, true)
-	c.JSON(http.StatusCreated, gin.H{"message": "Account successfully created", "token": token})
+	c.SetCookie("synapse_session", refreshToken, 86400, "/", "", false, true)
+	c.JSON(http.StatusCreated, gin.H{"message": "Account successfully created", "access_token": accessToken, "refresh_token": refreshToken})
 }
 
 func (h *AuthHandler) HandleLogout(c *gin.Context) {
-	token, err := c.Cookie("synapse_session")
+	refreshToken, err := c.Cookie("synapse_session")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No active session found"})
 		return
 	}
 
-	if err := h.srv.Logout(c.Request.Context(), token); err != nil {
+	if err := h.srv.Logout(c.Request.Context(), refreshToken); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to terminate session"})
 		return
 	}

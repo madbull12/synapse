@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
 const SUPASTE_LOGO =
   "https://framerusercontent.com/images/E5Op3vw8SO4i4cThRZINxLqTKlE.png?scale-down-to=512&width=1024&height=1024";
@@ -120,12 +121,15 @@ export default function MarketingHeader() {
               ))}
             </ul>
 
-            <a
-              href="#"
-              className="flex items-center gap-1.5 bg-white text-black text-[14px] font-semibold px-4 py-1.5 rounded-lg hover:bg-white/90 transition-colors duration-150"
+            <Link
+              href="/auth/register"
+              className={buttonVariants({
+                variant: "default",
+                className: "h-10 px-6 text-sm font-medium",
+              })}
             >
-              Login
-            </a>
+              Get Started
+            </Link>
           </div>
 
           <div className="flex md:hidden items-center justify-between px-4 py-3">

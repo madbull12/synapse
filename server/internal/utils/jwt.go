@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"os"
 	"time"
@@ -61,4 +63,27 @@ func ValidateToken(tokenString string) (*Claims, error) {
 	}
 
 	return nil, errors.New("invalid token credentials")
+}
+
+func GenerateAccessToken(userID uuid.UUID, email string) (string, error) {
+	claims := Claims{
+		UserID: userID,
+		Email:  email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)), // Short lifespan!
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    "synapse-api",
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(getSecretKey())
+}
+
+// Generate Opaque 7-Day Refresh Token String
+func GenerateRefreshToken() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }
