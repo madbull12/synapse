@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import Link from "next/link";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { useState } from "react";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useLogin } from "../hooks/mutations/use-auth";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -27,8 +35,20 @@ const Example = () => {
     },
   });
 
+  const { mutate: login, isPending, isError, error } = useLogin();
+
+  const [passwordVisible, setPasswordVisible] = useState(false);
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    login(values, {
+      onError: (error) => {
+        // form.setError("password", {
+        //   type: "manual",
+        //   message:
+        //     error.response?.data?.message || "Login failed. Please try again.",
+        // });
+      },
+    });
   }
 
   return (
@@ -76,21 +96,36 @@ const Example = () => {
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                {...field}
-                id="password"
-                aria-invalid={fieldState.invalid}
-                placeholder="Enter your password"
-                type="password"
-              />
+              <InputGroup>
+                <InputGroupInput
+                  {...field}
+                  id="inline-end-input"
+                  type={passwordVisible ? "text" : "password"}
+                  placeholder="Enter password"
+                />
+                <InputGroupAddon align="inline-end">
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                  >
+                    {passwordVisible ? <EyeIcon /> : <EyeOffIcon />}
+                  </Button>
+                </InputGroupAddon>
+              </InputGroup>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
         />
 
-        <Button className="w-full" type="submit">
+        <Button loading={isPending} className="w-full" type="submit">
           Sign In
         </Button>
+        {isError && (
+          <div className="p-3 text-sm text-destructive bg-destructive/20 rounded-md border border-destructive">
+            {error.response?.data?.message || "Login failed. Please try again."}
+          </div>
+        )}
         <p className="text-center text-muted-foreground text-sm">
           Don't have an account?{" "}
           <Link className="hover:underline text-primary" href="/auth/register">

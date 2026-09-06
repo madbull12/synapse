@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuthStore } from "@/features/auth/store/use-auth-store";
 
 export default function WorkspaceDropdown() {
   // This will eventually tie into your active workspace state
@@ -23,6 +24,9 @@ export default function WorkspaceDropdown() {
     memberCount: 32, // Reflecting your squad count context!
   };
 
+  const userid = useAuthStore((state) => state.userId);
+
+  console.log("User ID from store: ", userid);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

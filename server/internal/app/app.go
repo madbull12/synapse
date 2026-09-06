@@ -28,14 +28,18 @@ func Run(cfg *Config) {
 	db := initDB(cfg.DatabaseURL)
 
 	// 2. Initialize Dependency Injection Graph (Auth only)
-	userRepo := repository.NewUserRepository(db)
-	authSrv  := service.NewAuthService(userRepo)
+	authRepo := repository.NewAuthRepository(db)
+	authSrv  := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authSrv)
+
+	userRepo := repository.NewUserRepository(db)
+	userSrv := service.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userSrv)
 
 	// 3. Setup Router
 	r := gin.Default()
 	setupCORS(r)
-	setupRoutes(r, authHandler)
+	setupRoutes(r, authHandler, userHandler)
 
 	// 4. Start Server
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
@@ -47,6 +51,7 @@ func Run(cfg *Config) {
 func initDB(dsn string) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn), // Limits logging overhead
+		TranslateError: true, // 👈 Enable this
 	})
 	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
@@ -68,7 +73,7 @@ func initDB(dsn string) *gorm.DB {
 
 	// Auto-migrate Users schema only
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}); err != nil {
+	if err := db.AutoMigrate(&models.User{},&models.RefreshToken{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -77,7 +82,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		// Allows your Next.js client running on port 3000 to interact with this API
+		// Allow Next.js client running on port 3000 to interact with this API
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
@@ -91,31 +96,29 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler) {
-	api := r.Group("/api/v1")
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler) {
+	// Root API v1 group
+	v1 := r.Group("/api/v1")
+
+	// Public Auth endpoints -> /api/v1/auth/*
+	publicAuth := v1.Group("/auth")
 	{
-		// Public Auth routes
-		authGroup := api.Group("/auth")
-		{
-			authGroup.POST("/register", auth.HandleRegister)
-			authGroup.POST("/login", auth.HandleLogin)
-			authGroup.POST("/logout", auth.HandleLogout)
-		}
+		publicAuth.POST("/register", auth.HandleRegister)
+		publicAuth.POST("/login", auth.HandleLogin)
+		publicAuth.POST("/refresh", auth.HandleRefresh)
+		publicAuth.POST("/logout", auth.HandleLogout)
 
-		// Protected User routes
-		userGroup := api.Group("/users")
-		userGroup.Use(middleware.AuthRequired())
-		{
-			userGroup.GET("/me", func(c *gin.Context) {
-				userID, _ := c.Get("userID")
-				email, _ := c.Get("userEmail")
-
-				c.JSON(http.StatusOK, gin.H{
-					"message": "Authenticated successfully",
-					"user_id": userID,
-					"email":   email,
-				})
-			})
-		}
 	}
+
+
+
+	protectedUser := v1.Group("/user")
+	protectedUser.Use(middleware.AuthRequired())
+	{
+		protectedUser.GET("/:id/profile", user.HandleGetUserProfile)
+	}
+
+	
+
+
 }

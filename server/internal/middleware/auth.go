@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"net/http"
 	"strings"
 
+	"server/internal/apperr"
+	"server/internal/dto"
 	"server/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,7 @@ import (
 
 const (
 	AuthorizationHeader = "Authorization"
-	CookieName          = "synapse_session"
+	CookieName          = "refresh_token"
 	ContextUserIDKey    = "userID"
 	ContextUserEmailKey = "userEmail"
 )
@@ -33,21 +34,17 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		if tokenStr == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authentication required. Please log in.",
-			})
-			c.Abort()
-			return
-		}
+            dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Authentication required. Please log in."))
+            c.Abort()
+            return
+        }
 
-		claims, err := utils.ValidateToken(tokenStr)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Session expired or invalid. Please log in again.",
-			})
-			c.Abort()
-			return
-		}
+        claims, err := utils.ValidateToken(tokenStr)
+        if err != nil {
+            dto.RespondError(c, apperr.Unauthorized("TOKEN_EXPIRED", "Session expired or invalid. Please log in again."))
+            c.Abort()
+            return
+        }
 
 		c.Set(ContextUserIDKey, claims.UserID)
 		c.Set(ContextUserEmailKey, claims.Email)

@@ -33,6 +33,7 @@ import CreateChannelModal from "@/features/channel/components/create-channel-mod
 import ChannelList from "@/features/channel/components/channel-list";
 import DirectMessageList from "@/features/channel/components/direct-message-list";
 import WorkspaceDropdown from "@/features/workspace/components/workspace-dropdown";
+import UserDropdown from "@/features/workspace/components/user-dropdown";
 
 export function AppSidebar() {
   const [isChannelCollapsed, setIsChannelCollapsed] = useState(true);
@@ -116,7 +117,9 @@ export function AppSidebar() {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter />
+          <SidebarFooter>
+            <UserDropdown />
+          </SidebarFooter>
         </div>
       </div>
     </Sidebar>
