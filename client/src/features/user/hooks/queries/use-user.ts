@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 import { APIError } from "@/types";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@/features/user/types/api";
+import { User, UserResponse } from "@/features/user/types/api";
 import { userService } from "@/features/user/service";
 import { UserId } from "@/features/auth/store/use-auth-store";
 

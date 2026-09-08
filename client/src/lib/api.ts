@@ -78,11 +78,13 @@ privateApi.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await publicApi.post<{ access_token: string }>(
-          "/auth/refresh",
-        );
+        const response = await publicApi.post<{
+          success: boolean;
+          message: string;
+          data: { access_token: string };
+        }>("/auth/refresh");
 
-        const newAccessToken = response.data.access_token;
+        const newAccessToken = response.data.data.access_token;
         useAuthStore.getState().setAccessToken(newAccessToken);
 
         processQueue(null, newAccessToken);

@@ -41,7 +41,7 @@ const UserDropdown = () => {
               {userProfile?.name}
             </span>
             <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
-              {/* {activeWorkspace.role} */}
+              {/* {activeWorkspace.role} */}dsdsds
             </span>
           </div>
 

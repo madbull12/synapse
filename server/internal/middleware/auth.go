@@ -18,22 +18,19 @@ const (
 )
 
 func AuthRequired() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var tokenStr string
+    return func(c *gin.Context) {
+        var tokenStr string
 
-		if cookie, err := c.Cookie(CookieName); err == nil && cookie != "" {
-			tokenStr = cookie
-		} else {
-			authHeader := c.GetHeader(AuthorizationHeader)
-			if authHeader != "" {
-				parts := strings.Split(authHeader, " ")
-				if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
-					tokenStr = parts[1]
-				}
-			}
-		}
+        // Protected routes only care about the Authorization Bearer header!
+        authHeader := c.GetHeader(AuthorizationHeader)
+        if authHeader != "" {
+            parts := strings.Split(authHeader, " ")
+            if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+                tokenStr = parts[1]
+            }
+        }
 
-		if tokenStr == "" {
+        if tokenStr == "" {
             dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Authentication required. Please log in."))
             c.Abort()
             return
@@ -46,9 +43,9 @@ func AuthRequired() gin.HandlerFunc {
             return
         }
 
-		c.Set(ContextUserIDKey, claims.UserID)
-		c.Set(ContextUserEmailKey, claims.Email)
+        c.Set(ContextUserIDKey, claims.UserID)
+        c.Set(ContextUserEmailKey, claims.Email)
 
-		c.Next()
-	}
+        c.Next()
+    }
 }

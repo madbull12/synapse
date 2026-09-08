@@ -6,4 +6,4 @@ export interface User {
   name?: string;
   created_at: string;
 }
-export type AuthResponse = APIResponse<User>;
+export type UserResponse = APIResponse<User>;
