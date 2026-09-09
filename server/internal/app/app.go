@@ -73,7 +73,7 @@ func initDB(dsn string) *gorm.DB {
 
 	// Auto-migrate Users schema only
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{},&models.RefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&models.User{},&models.RefreshToken{},&models.Workspace{},&models.WorkspaceMember{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
