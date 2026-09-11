@@ -20,8 +20,8 @@ type Workspace struct {
 }
 
 type WorkspaceMember struct {
-    WorkspaceID uint      `gorm:"primaryKey" json:"workspace_id"`
-    UserID      uint      `gorm:"primaryKey" json:"user_id"`
+    WorkspaceID uuid.UUID `gorm:"type:uuid;primaryKey" json:"workspace_id"`
+    UserID      uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
     Role        string    `gorm:"type:varchar(20);default:'member'" json:"role"` // admin, member
     JoinedAt    time.Time `json:"joined_at"`
 }

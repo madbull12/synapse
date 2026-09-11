@@ -8,7 +8,7 @@ import (
 )
 
 type WorkspaceRepository interface {
-	Create(ctx context.Context, workspace *models.Workspace) error
+	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId string) ([]*models.Workspace, error)
 }
 
@@ -20,17 +20,16 @@ func NewWorkspaceRepository(db *gorm.DB) WorkspaceRepository {
 	return &workspaceRepository{db: db}
 }
 
-func (r *workspaceRepository) Create(ctx context.Context, workspace *models.Workspace) error {
-	err := r.db.WithContext(ctx).Create(workspace).Error
-	if err != nil {
-		return err
-	}
-	return nil
+func (r *workspaceRepository) Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error {
+    return db.WithContext(ctx).Create(workspace).Error
 }
-
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId string) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
-	err := r.db.WithContext(ctx).Where("user_id = ?", userId).Find(&workspaces).Error
+	err := r.db.WithContext(ctx).
+		Table("workspaces").
+		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
+		Where("workspace_members.user_id = ?", userId).
+		Find(&workspaces).Error
 	if err != nil {
 		return nil, err
 	}
