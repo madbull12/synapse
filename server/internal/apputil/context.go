@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetUserID(c *gin.Context) (uuid.UUID, *apperr.AppError) {
-userIdValue, exists := c.Get("userID")
+func GetUserID(c *gin.Context) (uuid.UUID, error) {
+	userIdValue, exists := c.Get("userID")
 	if !exists {
-		return uuid.Nil, apperr.Unauthorized("USER_ID_NOT_FOUND", "Authentication required")
+		return uuid.Nil, apperr.Unauthorized("UNAUTHORIZED", "Authentication required")
 	}
 
 	userId, ok := userIdValue.(uuid.UUID)

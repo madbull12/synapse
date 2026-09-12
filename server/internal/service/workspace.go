@@ -19,7 +19,10 @@ type CreateWorkspaceRequest struct {
 }
 
 type WorkspaceService interface {
-CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)}
+CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
+GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
+
+}
 
 type workspaceService struct {
 	db   *gorm.DB // Kept for transaction control
@@ -69,4 +72,12 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID
 
 	return workspace, nil
 
+}
+
+func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error) {
+	workspaces, err := s.repo.GetByUserId(ctx, userID)
+	if err != nil {
+		return nil, apperr.Internal(err)
+	}
+	return workspaces, nil
 }

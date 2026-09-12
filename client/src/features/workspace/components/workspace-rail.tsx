@@ -12,6 +12,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import CreateWorkspaceModal from "@/features/workspace/components/create-workspace-modal";
+import { useAuthStore } from "@/features/auth/store/use-auth-store";
+import { useWorkspaces } from "../hooks/queries/use-workspace";
 
 // Mock workspaces data layer contract
 const WORKSPACES_MOCK = [
@@ -23,6 +25,12 @@ const WORKSPACES_MOCK = [
 export function WorkspaceRail() {
   const params = useParams();
   const activeWorkspaceId = params?.workspaceId as string;
+
+  const userId = useAuthStore((state) => state.userId);
+
+  const { data } = useWorkspaces(userId!);
+
+  console.log("Workspaces data:", data);
 
   return (
     <div className="flex h-full p-3 flex-col items-center gap-y-4 border-r border-border bg-sidebar-background py-3 select-none">

@@ -36,10 +36,14 @@ func Run(cfg *Config) {
 	userSrv := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userSrv)
 
+	workspaceRepo := repository.NewWorkspaceRepository(db)
+	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo)
+	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
+
 	// 3. Setup Router
 	r := gin.Default()
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler)
+	setupRoutes(r, authHandler, userHandler,workspaceHandler)
 
 	// 4. Start Server
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
@@ -96,7 +100,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler) {
 	// Root API v1 group
 	v1 := r.Group("/api/v1")
 
@@ -110,15 +114,18 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 
 	}
 
-
-
 	protectedUser := v1.Group("/user")
 	protectedUser.Use(middleware.AuthRequired())
 	{
 		protectedUser.GET("/:id/profile", user.HandleGetUserProfile)
 	}
 
-	
+	protectedWorkspace := v1.Group("/workspaces")
+	protectedWorkspace.Use(middleware.AuthRequired())
+	{
+		protectedWorkspace.POST("", workspace.HandleCreateWorkspace)
+		protectedWorkspace.GET("", workspace.HandleGetUserWorkspaces)
+	}
 
 
 }
