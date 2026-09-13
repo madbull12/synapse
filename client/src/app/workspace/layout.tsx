@@ -11,10 +11,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
 
         <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-          {/* <div className="h-12 px-4 shrink-0 flex items-center border-b border-border/40 bg-background">
-            <SidebarTrigger />
-          </div> */}
-
           <div className="flex-1 overflow-y-auto bg-background">
             <WorkspaceHeader />
             {children}

@@ -5,8 +5,8 @@ import { workspaceService } from "@/features/workspace/service";
 
 export const useWorkspaces = (userId: string) => {
   return useQuery<any, AxiosError<APIError>>({
-    queryKey: ["workspaces"],
-    queryFn: () => workspaceService.getUserWorkspaces(userId),
+    queryKey: ["workspaces", userId],
+    queryFn: () => workspaceService.getUserWorkspaces(),
     enabled: !!userId, // Only run the query if userId is provided
   });
 };

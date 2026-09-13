@@ -28,6 +28,7 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 	var workspaces []*models.Workspace
 	err := r.db.WithContext(ctx).
 		Table("workspaces").
+		Select("workspaces.*").
 		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
 		Where("workspace_members.user_id = ?", userId).
 		Find(&workspaces).Error

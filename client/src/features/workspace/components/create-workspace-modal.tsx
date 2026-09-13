@@ -30,8 +30,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { ModalFooter } from "@/components/ui/credenza-footer";
+import { useCreateWorkspace } from "../hooks/mutations/use-workspace";
 
-// 1. Define the Validation Schema
 const createWorkspaceSchema = z.object({
   name: z
     .string()
@@ -48,7 +48,6 @@ type CreateWorkspaceFormData = z.infer<typeof createWorkspaceSchema>;
 export default function CreateWorkspaceModal() {
   const [open, setOpen] = React.useState(false);
 
-  // 2. Initialize React Hook Form
   const form = useForm<CreateWorkspaceFormData>({
     resolver: zodResolver(createWorkspaceSchema),
     defaultValues: {
@@ -56,21 +55,22 @@ export default function CreateWorkspaceModal() {
     },
   });
 
-  const isLoading = form.formState.isSubmitting;
+  const { mutate: createWorkspace, isPending } = useCreateWorkspace();
 
-  // 3. Submit Handler matching your Go Backend contract
-  async function onSubmit(data: CreateWorkspaceFormData) {
-    try {
-      console.log("Submitting workspace payload to Go backend:", data);
-
-      // Simulate API network latency
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-      console.error("Failed to create workspace:", error);
-    }
+  function onSubmit(data: CreateWorkspaceFormData) {
+    createWorkspace(
+      {
+        name: data.name,
+        slug: data.name.toLowerCase().replace(/\s+/g, "-"),
+        logoURL: "", // Placeholder for logo URL, can be updated later
+      },
+      {
+        onSuccess: () => {
+          form.reset();
+          setOpen(false);
+        },
+      },
+    );
   }
 
   return (
@@ -111,7 +111,7 @@ export default function CreateWorkspaceModal() {
                     <Input
                       {...field}
                       id="workspace-name"
-                      disabled={isLoading}
+                      disabled={isPending}
                       placeholder="e.g. Acme Corp, Side Hustle"
                       autoComplete="off"
                       aria-invalid={fieldState.invalid}
@@ -132,9 +132,9 @@ export default function CreateWorkspaceModal() {
         {/* Unified Footer Actions Controls */}
         <ModalFooter
           formId="create-workspace-form"
-          submitLabel={isLoading ? "Creating..." : "Create Workspace"}
+          submitLabel={isPending ? "Creating..." : "Create Workspace"}
           cancelLabel="Cancel"
-          isLoading={isLoading}
+          isLoading={isPending}
           onCancel={() => setOpen(false)}
         />
       </CredenzaContent>

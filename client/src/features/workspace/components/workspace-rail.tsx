@@ -27,7 +27,6 @@ export function WorkspaceRail() {
   const activeWorkspaceId = params?.workspaceId as string;
 
   const userId = useAuthStore((state) => state.userId);
-
   const { data } = useWorkspaces(userId!);
 
   console.log("Workspaces data:", data);

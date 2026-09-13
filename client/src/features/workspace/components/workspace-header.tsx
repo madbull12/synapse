@@ -6,11 +6,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const WorkspaceHeader = () => {
   return (
     <header className="px-4 shrink-0 flex items-center justify-between p-4 border-b border-border/40 bg-background">
       <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+        <SidebarTrigger />
         <Hash />
         <span>general</span>
       </div>

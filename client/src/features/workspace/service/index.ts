@@ -1,9 +1,14 @@
-import { UserId } from "@/features/auth/store/use-auth-store";
 import { privateApi } from "@/lib/api";
+import { CreateWorkspaceDTO } from "@/features/workspace/types/api";
 
 export const workspaceService = {
-  async getUserWorkspaces(userId: UserId): Promise<any> {
+  async getUserWorkspaces(): Promise<any> {
     const res = await privateApi.get<any>(`/workspaces`);
     return res.data.data;
+  },
+
+  async createWorkspace(data: CreateWorkspaceDTO): Promise<any> {
+    const res = await privateApi.post<any>("/workspaces", data);
+    return res.data;
   },
 };
