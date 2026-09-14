@@ -27,6 +27,7 @@ func (r *workspaceRepository) Create(ctx context.Context, db *gorm.DB, workspace
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
 	err := r.db.WithContext(ctx).
+		Preload("Users").
 		Table("workspaces").
 		Select("workspaces.*").
 		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").

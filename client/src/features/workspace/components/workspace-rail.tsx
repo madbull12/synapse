@@ -35,7 +35,7 @@ export function WorkspaceRail() {
     <div className="flex h-full p-3 flex-col items-center gap-y-4 border-r border-border bg-sidebar-background py-3 select-none">
       {/* Workspace Icons List */}
       <div className="flex w-full flex-1 flex-col items-center gap-y-3">
-        {WORKSPACES_MOCK.map((workspace) => {
+        {data?.data?.map((workspace) => {
           const isActive = activeWorkspaceId === workspace.id;
 
           return (
@@ -63,7 +63,11 @@ export function WorkspaceRail() {
                     )}
                   >
                     <AvatarFallback className="bg-transparent">
-                      {workspace.initials}
+                      {workspace.name
+                        .split(" ")
+                        .map((word: string) => word[0])
+                        .join("")
+                        .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
