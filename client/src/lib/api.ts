@@ -85,7 +85,6 @@ privateApi.interceptors.response.use(
         }>("/auth/refresh");
 
         const newAccessToken = response.data.data.access_token;
-        useAuthStore.getState().setAccessToken(newAccessToken);
 
         processQueue(null, newAccessToken);
         isRefreshing = false;
@@ -100,7 +99,7 @@ privateApi.interceptors.response.use(
 
         useAuthStore.getState().clearAuth();
         if (typeof window !== "undefined") {
-          window.location.href = "/login?expired=true";
+          window.location.href = "/auth/login?expired=true";
         }
         return Promise.reject(refreshError);
       }

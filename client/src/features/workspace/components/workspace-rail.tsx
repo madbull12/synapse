@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
@@ -14,13 +14,6 @@ import {
 import CreateWorkspaceModal from "@/features/workspace/components/create-workspace-modal";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { useWorkspaces } from "../hooks/queries/use-workspace";
-
-// Mock workspaces data layer contract
-const WORKSPACES_MOCK = [
-  { id: "synapse", name: "Synapse Workspace", initials: "SW" },
-  { id: "side-hustle", name: "Side Hustle Crew", initials: "SH" },
-  { id: "ekspedingin", name: "Ekspedingin Dev", initials: "ED" },
-];
 
 export function WorkspaceRail() {
   const params = useParams();
@@ -42,29 +35,40 @@ export function WorkspaceRail() {
             <Tooltip key={workspace.id}>
               <TooltipTrigger asChild>
                 <Link
-                  href={`/${workspace.id}`}
+                  href={`/workspace/${workspace.id}`}
                   className="group relative flex items-center justify-center"
                 >
-                  {/* Left Pill Highlight Indicator Indicator */}
                   <div
                     className={cn(
-                      "absolute left-0 w-1 bg-foreground rounded-r-full transition-all duration-200 origin-left",
-                      isActive ? "h-8" : "h-0 group-hover:h-4",
+                      "absolute -left-2 w-1 bg-primary rounded-full transition-all duration-200 ease-out",
+                      isActive ? "h-8" : "h-0 ",
                     )}
                   />
 
                   {/* Workspace Avatar Frame */}
                   <Avatar
                     className={cn(
-                      "size-11 transition-all duration-200 rounded-2xl cursor-pointer font-semibold text-sm",
-                      isActive
-                        ? "rounded-xl bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:rounded-xl hover:bg-accent hover:text-accent-foreground",
+                      "size-11 rounded-2xl cursor-pointer font-semibold text-sm transition-all duration-200 ease-out",
                     )}
                   >
-                    <AvatarFallback className="bg-transparent">
+                    {workspace.logo_url && (
+                      <AvatarImage
+                        src={workspace.logo_url}
+                        alt={workspace.name}
+                        className="object-cover"
+                      />
+                    )}
+                    <AvatarFallback
+                      className={cn(
+                        "transition-colors duration-200",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground group-hover:text-foreground",
+                      )}
+                    >
                       {workspace.name
                         .split(" ")
+                        .slice(0, 2)
                         .map((word: string) => word[0])
                         .join("")
                         .toUpperCase()}

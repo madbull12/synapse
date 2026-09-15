@@ -178,7 +178,7 @@ export default function ChatPanel() {
         </MessageScroller>
       </MessageScrollerProvider>
 
-      <div className="px-6 pb-6 shrink-0 sticky  bottom-0">
+      <div className="px-6 py-6 shrink-0 sticky bg-background bottom-0 border-t border-border">
         <form
           onSubmit={handleSendMessage}
           className="border rounded-xl bg-muted/20 focus-within:ring-1 focus-within:ring-ring transition-all p-2 flex flex-col gap-2"

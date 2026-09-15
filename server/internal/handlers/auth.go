@@ -61,9 +61,18 @@ func (h *AuthHandler) HandleLogin(c *gin.Context) {
 		true,
 	)
 
+	c.SetCookie(
+		"access_token",
+		result.AccessToken,
+		15*60,
+		"/",
+        "",
+        isProduction,
+        true,
+	)
+
 	
 	dto.RespondSuccess(c,http.StatusOK,"Login Successful",dto.AuthResponse{
-		Token:result.AccessToken,
 		UserID: result.UserID,
 	})
 }
@@ -103,9 +112,17 @@ func (h *AuthHandler) HandleRegister(c *gin.Context) {
 		isProduction,
 		true,
 	)
-
+	c.SetCookie(
+        "access_token",
+        result.AccessToken,
+        15*60,
+        "/",
+        "",
+        isProduction,
+        true,
+    )
 	dto.RespondSuccess(c, http.StatusCreated, "Account successfully created", dto.AuthResponse{
-		Token:  result.AccessToken,
+		// Token:  result.AccessToken,
 		UserID: result.UserID,
 	})
 }
@@ -132,8 +149,8 @@ func (h *AuthHandler) HandleLogout(c *gin.Context) {
         "",
         isProduction,
         true,
-    )
-
+    )	
+	c.SetCookie("access_token", "", -1, "/", "", isProduction, true)
     dto.RespondSuccess(c, http.StatusOK, "Logout successful", nil)
 }
 
@@ -144,21 +161,17 @@ func (h *AuthHandler) HandleRefresh(c *gin.Context) {
         return
     }
 
-    // 1. Call service layer to rotate tokens
     newAccessToken, newRefreshToken, err := h.srv.RefreshToken(c.Request.Context(), refreshToken)
     if err != nil {
-        // Clear the invalid/expired cookie from the user's browser
         c.SetCookie("refresh_token", "", -1, "/", "", true, true)
 
         dto.RespondError(c, apperr.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or has expired"))
         return
     }
-
-    // 2. Set the newly rotated Refresh Token in the HttpOnly cookie (7 days)
+	isProduction := os.Getenv("ENV") == "production"
+    c.SetSameSite(http.SameSiteLaxMode)
     c.SetCookie("refresh_token", newRefreshToken, 3600*24*7, "/", "", true, true)
+	c.SetCookie("access_token", newAccessToken, 15*60, "/", "", isProduction, true)
 
-    // 3. Return the fresh 15-minute Access Token in the response body
-    dto.RespondSuccess(c, http.StatusOK, "Token refreshed successfully", dto.AuthResponse{
-        Token: newAccessToken,
-    })
+ 	 dto.RespondSuccess(c, http.StatusOK, "Token refreshed successfully", nil)
 }
