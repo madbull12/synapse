@@ -19,17 +19,17 @@ export const privateApi = axios.create({
   withCredentials: true,
 });
 
-privateApi.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const accessToken = useAuthStore.getState().accessToken;
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
+// privateApi.interceptors.request.use(
+//   (config: InternalAxiosRequestConfig) => {
+//     const accessToken = useAuthStore.getState().accessToken;
+//     if (accessToken && config.headers) {
+//       config.headers.Authorization = `Bearer ${accessToken}`;
+//     }
 
-    return config;
-  },
-  (error: AxiosError) => Promise.reject(error),
-);
+//     return config;
+//   },
+//   (error: AxiosError) => Promise.reject(error),
+// );
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -63,41 +63,27 @@ privateApi.interceptors.response.use(
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-            }
-            return privateApi(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
+          failedQueue.push({
+            resolve: () => resolve(privateApi(originalRequest)),
+            reject,
+          });
+        });
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const response = await publicApi.post<{
-          success: boolean;
-          message: string;
-          data: { access_token: string };
-        }>("/auth/refresh");
+        await publicApi.post("/auth/refresh");
 
-        const newAccessToken = response.data.data.access_token;
-
-        processQueue(null, newAccessToken);
+        processQueue(null);
         isRefreshing = false;
 
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        }
         return privateApi(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError);
         isRefreshing = false;
 
-        useAuthStore.getState().clearAuth();
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login?expired=true";
         }

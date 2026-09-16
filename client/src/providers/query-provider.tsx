@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
-import { AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 import { APIError } from "@/types";
 import { toast } from "sonner";
 
@@ -19,7 +19,13 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 60 * 1000,
             refetchOnWindowFocus: false,
-            retry: 1,
+            retry: (failureCount, error) => {
+              if (axios.isAxiosError(error) && error.response?.status === 401) {
+                return false;
+              }
+              // Otherwise, retry up to 3 times for other network errors
+              return failureCount < 3;
+            },
           },
         },
         mutationCache: new MutationCache({

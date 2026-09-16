@@ -1,11 +1,10 @@
 package middleware
 
 import (
-	"strings"
-
 	"server/internal/apperr"
 	"server/internal/dto"
 	"server/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,33 +18,39 @@ const (
 
 func AuthRequired() gin.HandlerFunc {
     return func(c *gin.Context) {
-        var tokenStr string
+        var token string
 
-        // Protected routes only care about the Authorization Bearer header!
-        authHeader := c.GetHeader(AuthorizationHeader)
-        if authHeader != "" {
-            parts := strings.Split(authHeader, " ")
-            if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
-                tokenStr = parts[1]
+        // 1. Try checking the Authorization header first (used by Next.js SSR fetch)
+        authHeader := c.GetHeader("Authorization")
+        if strings.HasPrefix(authHeader, "Bearer ") {
+            token = strings.TrimPrefix(authHeader, "Bearer ")
+        }
+
+        // 2. If no header is present, fallback to checking the HttpOnly cookie (used by Client fetch)
+        if token == "" {
+            cookieToken, err := c.Cookie("access_token")
+            if err == nil {
+                token = cookieToken
             }
         }
 
-        if tokenStr == "" {
-            dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Authentication required. Please log in."))
+        // 3. If neither exists, reject with 401
+        if token == "" {
+            dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Missing access token"))
             c.Abort()
             return
         }
 
-        claims, err := utils.ValidateToken(tokenStr)
+        // 4. Validate the token string
+        claims, err := utils.ValidateToken(token)
         if err != nil {
-            dto.RespondError(c, apperr.Unauthorized("TOKEN_EXPIRED", "Session expired or invalid. Please log in again."))
+            dto.RespondError(c, apperr.Unauthorized("TOKEN_EXPIRED", "Session expired or invalid."))
             c.Abort()
             return
         }
 
         c.Set(ContextUserIDKey, claims.UserID)
         c.Set(ContextUserEmailKey, claims.Email)
-
         c.Next()
     }
 }
