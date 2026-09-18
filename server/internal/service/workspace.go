@@ -21,6 +21,7 @@ type CreateWorkspaceRequest struct {
 type WorkspaceService interface {
 CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
 GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
+GetWorkspaceById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error)
 
 }
 
@@ -80,4 +81,12 @@ func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid
 		return nil, apperr.Internal(err)
 	}
 	return workspaces, nil
+}
+
+func (s *workspaceService) GetWorkspaceById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error) {
+	workspace, err := s.repo.GetById(ctx, workspaceId)
+	if err != nil {
+		return nil, apperr.Internal(err)
+	}
+	return workspace, nil
 }

@@ -23,7 +23,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
               if (axios.isAxiosError(error) && error.response?.status === 401) {
                 return false;
               }
-              // Otherwise, retry up to 3 times for other network errors
               return failureCount < 3;
             },
           },

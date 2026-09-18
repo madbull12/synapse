@@ -45,7 +45,11 @@ const createWorkspaceSchema = z.object({
 
 type CreateWorkspaceFormData = z.infer<typeof createWorkspaceSchema>;
 
-export default function CreateWorkspaceModal() {
+export default function CreateWorkspaceModal({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
   const [open, setOpen] = React.useState(false);
 
   const form = useForm<CreateWorkspaceFormData>({
@@ -79,11 +83,15 @@ export default function CreateWorkspaceModal() {
       <Tooltip delayDuration={200}>
         <CredenzaTrigger asChild>
           <TooltipTrigger className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200 cursor-pointer">
-            <Plus className="size-5" />
+            {children ? (
+              children
+            ) : (
+              <p className="font-medium text-xs">Create Workspace</p>
+            )}
           </TooltipTrigger>
         </CredenzaTrigger>
         <TooltipContent side="right" sideOffset={12}>
-          <p className="text-xs">Add a workspace</p>
+          Create Workspace
         </TooltipContent>
       </Tooltip>
 

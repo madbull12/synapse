@@ -84,7 +84,7 @@ export function WorkspaceRail() {
         })}
       </div>
 
-      <CreateWorkspaceModal />
+      <CreateWorkspaceModal children={<Plus className="size-5" />} />
     </div>
   );
 }

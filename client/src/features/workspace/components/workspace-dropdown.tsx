@@ -26,7 +26,6 @@ export default function WorkspaceDropdown() {
 
   const userid = useAuthStore((state) => state.userId);
 
-  console.log("User ID from store: ", userid);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

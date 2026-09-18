@@ -122,7 +122,6 @@ func (h *AuthHandler) HandleRegister(c *gin.Context) {
         true,
     )
 	dto.RespondSuccess(c, http.StatusCreated, "Account successfully created", dto.AuthResponse{
-		// Token:  result.AccessToken,
 		UserID: result.UserID,
 	})
 }
@@ -162,15 +161,17 @@ func (h *AuthHandler) HandleRefresh(c *gin.Context) {
     }
 
     newAccessToken, newRefreshToken, err := h.srv.RefreshToken(c.Request.Context(), refreshToken)
+	isProduction := os.Getenv("ENV") == "production"
+
     if err != nil {
-        c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+        c.SetCookie("refresh_token", "", -1, "/", "", isProduction, true)
+        c.SetCookie("access_token", "", -1, "/", "", isProduction, true)
 
         dto.RespondError(c, apperr.Unauthorized("INVALID_REFRESH_TOKEN", "Refresh token is invalid or has expired"))
         return
     }
-	isProduction := os.Getenv("ENV") == "production"
     c.SetSameSite(http.SameSiteLaxMode)
-    c.SetCookie("refresh_token", newRefreshToken, 3600*24*7, "/", "", true, true)
+    c.SetCookie("refresh_token", newRefreshToken, 3600*24*7, "/", "", isProduction, true)
 	c.SetCookie("access_token", newAccessToken, 15*60, "/", "", isProduction, true)
 
  	 dto.RespondSuccess(c, http.StatusOK, "Token refreshed successfully", nil)

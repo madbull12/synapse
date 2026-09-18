@@ -11,6 +11,7 @@ import (
 type WorkspaceRepository interface {
 	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error)
+	GetById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error)
 }
 
 type workspaceRepository struct {
@@ -37,4 +38,13 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 		return nil, err
 	}
 	return workspaces, nil
+}
+
+func (r *workspaceRepository) GetById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error) {
+	var workspace models.Workspace
+	err := r.db.WithContext(ctx).First(&workspace, "id = ?", workspaceId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &workspace, nil
 }

@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"net/http"
+	"server/internal/apperr"
 	"server/internal/apputil"
 	"server/internal/dto"
 	"server/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type WorkspaceHandler struct {
@@ -52,4 +54,22 @@ func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
 
     // 3. Return a standardized success response
     dto.RespondSuccess(c, http.StatusOK, "Workspaces retrieved successfully", workspaces)
+}
+
+func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
+    idParam := c.Param("id")
+    workspaceId, err := uuid.Parse(idParam)
+    if err != nil {
+        dto.RespondError(c, apperr.BadRequest("INVALID_UUID", "Provided workspace ID is invalid"))
+        return
+    }
+
+    workspace, err := h.srv.GetWorkspaceById(c.Request.Context(), workspaceId)
+    if err != nil {
+        dto.RespondError(c, err)
+        return
+    }
+
+    // 3. Return the workspace data back to the client
+    dto.RespondSuccess(c, http.StatusOK, "Workspace retrieved successfully", workspace)
 }
