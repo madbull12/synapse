@@ -34,11 +34,19 @@ import ChannelList from "@/features/channel/components/channel-list";
 import DirectMessageList from "@/features/channel/components/direct-message-list";
 import WorkspaceDropdown from "@/features/workspace/components/workspace-dropdown";
 import UserDropdown from "@/features/workspace/components/user-dropdown";
+import { useWorkspaceById } from "@/features/workspace/hooks/queries/use-workspace";
+import { useParams } from "next/navigation";
 
 export function AppSidebar() {
   const [isChannelCollapsed, setIsChannelCollapsed] = useState(true);
   const [isDirectMessageCollapsed, setIsDirectMessageCollapsed] =
     useState(true);
+
+  const { workspaceId } = useParams();
+
+  const { data } = useWorkspaceById(workspaceId as string);
+
+  console.log("Workspace data:", data);
 
   return (
     <Sidebar>

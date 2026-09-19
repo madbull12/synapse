@@ -21,7 +21,7 @@ type CreateWorkspaceRequest struct {
 type WorkspaceService interface {
 CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
 GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
-GetWorkspaceById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error)
+GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
 
 }
 
@@ -83,10 +83,11 @@ func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid
 	return workspaces, nil
 }
 
-func (s *workspaceService) GetWorkspaceById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error) {
-	workspace, err := s.repo.GetById(ctx, workspaceId)
-	if err != nil {
-		return nil, apperr.Internal(err)
-	}
-	return workspace, nil
+func (s *workspaceService) GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
+    workspace, err := s.repo.GetByIdAndUser(ctx, workspaceId, userId)
+    if err != nil {
+        // If GORM returns record not found, treat it as a clean Forbidden or Not Found
+        return nil, apperr.Forbidden("UNAUTHORIZED_WORKSPACE_ACCESS", "You do not have access to this workspace")
+    }
+    return workspace, nil
 }

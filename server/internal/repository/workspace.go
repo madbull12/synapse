@@ -11,7 +11,7 @@ import (
 type WorkspaceRepository interface {
 	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error)
-	GetById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error)
+	GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
 }
 
 type workspaceRepository struct {
@@ -40,11 +40,18 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 	return workspaces, nil
 }
 
-func (r *workspaceRepository) GetById(ctx context.Context, workspaceId uuid.UUID) (*models.Workspace, error) {
-	var workspace models.Workspace
-	err := r.db.WithContext(ctx).First(&workspace, "id = ?", workspaceId).Error
-	if err != nil {
-		return nil, err
-	}
-	return &workspace, nil
+func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
+    var workspace models.Workspace
+    
+    // Example using GORM: joining or checking a membership relation
+    err := r.db.WithContext(ctx).
+        Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
+        Where("workspaces.id = ? AND workspace_members.user_id = ?", workspaceId, userId).
+        First(&workspace).Error
+        
+    if err != nil {
+        return nil, err // Returns gorm.ErrRecordNotFound if they aren't a member or workspace doesn't exist
+    }
+    
+    return &workspace, nil
 }

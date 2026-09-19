@@ -11,3 +11,11 @@ export const useWorkspaces = (userId: string) => {
     enabled: !!userId, // Only run the query if userId is provided
   });
 };
+
+export const useWorkspaceById = (workspaceId: string) => {
+  return useQuery<any, AxiosError<APIError>>({
+    queryKey: ["workspace", workspaceId],
+    queryFn: () => workspaceService.getWorkspaceForUser(workspaceId),
+    enabled: !!workspaceId, // Only run the query if workspaceId is provided
+  });
+};

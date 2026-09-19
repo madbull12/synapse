@@ -52,7 +52,6 @@ func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
         return
     }
 
-    // 3. Return a standardized success response
     dto.RespondSuccess(c, http.StatusOK, "Workspaces retrieved successfully", workspaces)
 }
 
@@ -64,12 +63,18 @@ func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
         return
     }
 
-    workspace, err := h.srv.GetWorkspaceById(c.Request.Context(), workspaceId)
+    userIdVal, exists := c.Get("userID") 
+    if !exists {
+        dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "User session not found"))
+        return
+    }
+    userId := userIdVal.(uuid.UUID)
+
+    workspace, err := h.srv.GetWorkspaceForUser(c.Request.Context(), workspaceId, userId)
     if err != nil {
         dto.RespondError(c, err)
         return
     }
 
-    // 3. Return the workspace data back to the client
     dto.RespondSuccess(c, http.StatusOK, "Workspace retrieved successfully", workspace)
 }
