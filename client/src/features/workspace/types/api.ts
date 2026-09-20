@@ -23,4 +23,16 @@ export type WorkspaceDTO = {
   updated_at: string;
 };
 
+export type WorkspaceByIdDto = {
+  created_at: string;
+  id: string;
+  logo_url: string;
+  name: string;
+  owner_id: string;
+  slug: string;
+  updated_at: string;
+};
+
+export type WorkspaceByIdResponse = APIResponse<WorkspaceByIdDto>;
+
 export type WorkspaceResponse = APIResponse<WorkspaceDTO[]>;

@@ -2,7 +2,10 @@ import { APIError } from "@/types";
 import { useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { workspaceService } from "@/features/workspace/service";
-import { WorkspaceResponse } from "@/features/workspace/types/api";
+import {
+  WorkspaceByIdResponse,
+  WorkspaceResponse,
+} from "@/features/workspace/types/api";
 
 export const useWorkspaces = (userId: string) => {
   return useQuery<WorkspaceResponse, AxiosError<APIError>>({
@@ -13,9 +16,9 @@ export const useWorkspaces = (userId: string) => {
 };
 
 export const useWorkspaceById = (workspaceId: string) => {
-  return useQuery<any, AxiosError<APIError>>({
+  return useQuery<WorkspaceByIdResponse, AxiosError<APIError>>({
     queryKey: ["workspace", workspaceId],
-    queryFn: () => workspaceService.getWorkspaceForUser(workspaceId),
-    enabled: !!workspaceId, // Only run the query if workspaceId is provided
+    queryFn: () => workspaceService.getWorkspaceById(workspaceId),
+    enabled: !!workspaceId,
   });
 };

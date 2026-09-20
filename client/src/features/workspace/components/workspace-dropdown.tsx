@@ -14,14 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
+import { WorkspaceByIdDto } from "@/features/workspace/types/api";
 
-export default function WorkspaceDropdown() {
-  // This will eventually tie into your active workspace state
+type Props = {
+  workspaceById: WorkspaceByIdDto;
+};
+
+export default function WorkspaceDropdown({ workspaceById }: Props) {
   const activeWorkspace = {
-    name: "My Workspace",
-    initials: "M",
+    name: workspaceById.name,
+    initials: workspaceById.name.substring(0, 2).toUpperCase(),
     role: "Admin",
-    memberCount: 32, // Reflecting your squad count context!
+    memberCount: 32,
   };
 
   const userid = useAuthStore((state) => state.userId);

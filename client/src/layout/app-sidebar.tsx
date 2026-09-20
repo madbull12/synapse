@@ -57,7 +57,7 @@ export function AppSidebar() {
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
           <SidebarHeader className="p-2">
-            <WorkspaceDropdown />
+            {data && <WorkspaceDropdown workspaceById={data.data} />}
           </SidebarHeader>
 
           <Separator className="opacity-60" />
