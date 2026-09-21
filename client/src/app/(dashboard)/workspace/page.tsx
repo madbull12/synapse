@@ -1,19 +1,16 @@
 import { Button } from "@/components/ui/button";
-import ChatPanel from "@/features/chat/components/chat-panel";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 const fetchWorkspaces = async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("access_token")?.value;
-  console.log("Access Token from cookies:", accessToken);
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/workspaces`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
     cache: "no-store",
   });
-  console.log("Response from /workspaces:", res);
   if (!res.ok) return null;
   const json = await res.json();
   return json.data;
@@ -35,14 +32,7 @@ const WorkspacePage = async () => {
         You haven't joined or created any workspaces. Get started by creating
         your first one below.
       </p>
-      {/* Put your Create Workspace button, form, or alternative UI component here */}
-      <Button
-        onClick={() => {
-          // Handle create workspace logic
-        }}
-      >
-        Create Workspace
-      </Button>
+      <Button onClick={() => {}}>Create Workspace</Button>
     </div>
   );
 };
