@@ -13,16 +13,25 @@ import {
 } from "@/components/ui/tooltip";
 import CreateWorkspaceModal from "@/features/workspace/components/create-workspace-modal";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
-import { useWorkspaces } from "../hooks/queries/use-workspace";
+import { useWorkspaces } from "@/features/workspace/hooks/queries/use-workspace";
+import { useQueryClient } from "@tanstack/react-query";
+import { workspaceService } from "../service";
 
 export function WorkspaceRail() {
+  const queryClient = useQueryClient();
   const params = useParams();
   const activeWorkspaceId = params?.workspaceId as string;
 
   const userId = useAuthStore((state) => state.userId);
   const { data } = useWorkspaces(userId!);
 
-  console.log("Workspaces data:", data);
+  const prefetchWorkspaceDetail = (workspaceId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ["workspace", workspaceId],
+      queryFn: async () => workspaceService.getWorkspaceById(workspaceId),
+      staleTime: 1000 * 60 * 5, // Keep cache fresh for 5 mins
+    });
+  };
 
   return (
     <div className="flex h-full p-3 flex-col items-center gap-y-4 border-r border-border bg-sidebar-background py-3 select-none">
@@ -36,6 +45,7 @@ export function WorkspaceRail() {
               <TooltipTrigger asChild>
                 <Link
                   href={`/workspace/${workspace.id}`}
+                  onMouseEnter={() => prefetchWorkspaceDetail(workspace.id)}
                   className="group relative flex items-center justify-center"
                 >
                   <div

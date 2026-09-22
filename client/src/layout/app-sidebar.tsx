@@ -46,8 +46,6 @@ export function AppSidebar() {
 
   const { data } = useWorkspaceById(workspaceId as string);
 
-  console.log("Workspace data:", data);
-
   return (
     <Sidebar>
       <div className="flex h-full w-full overflow-hidden">
