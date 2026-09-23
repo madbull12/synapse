@@ -33,6 +33,6 @@ export type WorkspaceByIdDto = {
   updated_at: string;
 };
 
-export type WorkspaceByIdResponse = APIResponse<WorkspaceByIdDto>;
+export type WorkspaceByIdResponse = APIResponse<WorkspaceDTO>;
 
 export type WorkspaceResponse = APIResponse<WorkspaceDTO[]>;

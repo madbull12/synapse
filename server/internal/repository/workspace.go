@@ -43,8 +43,8 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
     var workspace models.Workspace
     
-    // Example using GORM: joining or checking a membership relation
     err := r.db.WithContext(ctx).
+	    Preload("Users").
         Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
         Where("workspaces.id = ? AND workspace_members.user_id = ?", workspaceId, userId).
         First(&workspace).Error

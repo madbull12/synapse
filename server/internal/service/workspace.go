@@ -91,3 +91,4 @@ func (s *workspaceService) GetWorkspaceForUser(ctx context.Context, workspaceId 
     }
     return workspace, nil
 }
+

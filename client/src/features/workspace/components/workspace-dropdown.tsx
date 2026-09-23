@@ -14,10 +14,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
-import { WorkspaceByIdDto } from "@/features/workspace/types/api";
+import { WorkspaceDTO } from "@/features/workspace/types/api";
 
 type Props = {
-  workspaceById: WorkspaceByIdDto;
+  workspaceById: WorkspaceDTO;
 };
 
 export default function WorkspaceDropdown({ workspaceById }: Props) {
