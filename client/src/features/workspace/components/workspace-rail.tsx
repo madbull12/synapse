@@ -15,7 +15,7 @@ import CreateWorkspaceModal from "@/features/workspace/components/create-workspa
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { useWorkspaces } from "@/features/workspace/hooks/queries/use-workspace";
 import { useQueryClient } from "@tanstack/react-query";
-import { workspaceService } from "../service";
+import { workspaceService } from "@/features/workspace/service";
 
 export function WorkspaceRail() {
   const queryClient = useQueryClient();

@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { ChevronDown, Settings, UserPlus, LogOut, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,9 +20,15 @@ type Props = {
 };
 
 export default function WorkspaceDropdown({ workspaceById }: Props) {
+  console.log("Workspace: ", workspaceById);
   const activeWorkspace = {
     name: workspaceById.name,
-    initials: workspaceById.name.substring(0, 2).toUpperCase(),
+    initials: workspaceById.name
+      .split(" ")
+      .slice(0, 2)
+      .map((word: string) => word[0])
+      .join("")
+      .toUpperCase(),
     role: "Admin",
     memberCount: 32,
   };
