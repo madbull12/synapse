@@ -37,11 +37,15 @@ func Run(cfg *Config) {
 	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
-	// workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
+	workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
+
+	channelRepo := repository.NewChannelRepository(db)
+	channelSrv := service.NewChannelService(db,channelRepo,workspaceMemberRepo)
+	channelHandler := handlers.NewChannelHandler(channelSrv)
 
 	r := gin.Default()
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler,workspaceHandler)
+	setupRoutes(r, authHandler, userHandler,workspaceHandler,channelHandler)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
@@ -93,7 +97,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler,channel *handlers.ChannelHandler) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
