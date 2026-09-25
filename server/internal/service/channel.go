@@ -14,6 +14,7 @@ import (
 
 type ChannelService interface {
 	CreateChannel(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID, req dto.CreateChannelRequest) (*models.Channel, error)
+	GetWorkspaceChannels(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) ([]*models.Channel, error)
 }
 
 type channelService struct {
@@ -76,4 +77,21 @@ func (s *channelService) CreateChannel(ctx context.Context, workspaceId uuid.UUI
 	}
 
 	return channel, nil
+}
+
+func (s *channelService) GetWorkspaceChannels(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) ([]*models.Channel, error) {
+	isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx, workspaceId, userId)
+	if err != nil {
+		return nil, apperr.Internal(err, "Failed to verify workspace membership")
+	}
+	if !isMember {
+		return nil, apperr.Forbidden("NOT_WORKSPACE_MEMBER", "You are not a member of this workspace")
+	}
+
+	channels, err := s.channelRepository.GetWorkspaceChannels(ctx, workspaceId)
+	if err != nil {
+		return nil, apperr.Internal(err, "Failed to fetch channels")
+	}
+
+	return channels, nil
 }

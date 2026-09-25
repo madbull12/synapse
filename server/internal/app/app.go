@@ -26,7 +26,7 @@ func Run(cfg *Config) {
 	db := initDB(cfg.DatabaseURL)
 
 	authRepo := repository.NewAuthRepository(db)
-	authSrv  := service.NewAuthService(authRepo)
+	authSrv := service.NewAuthService(authRepo)
 	authHandler := handlers.NewAuthHandler(authSrv)
 
 	userRepo := repository.NewUserRepository(db)
@@ -40,12 +40,12 @@ func Run(cfg *Config) {
 	workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
 
 	channelRepo := repository.NewChannelRepository(db)
-	channelSrv := service.NewChannelService(db,channelRepo,workspaceMemberRepo)
+	channelSrv := service.NewChannelService(db, channelRepo, workspaceMemberRepo)
 	channelHandler := handlers.NewChannelHandler(channelSrv)
 
 	r := gin.Default()
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler,workspaceHandler,channelHandler)
+	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
@@ -55,8 +55,8 @@ func Run(cfg *Config) {
 
 func initDB(dsn string) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn), // Limits logging overhead
-		TranslateError: true, // 👈 Enable this
+		Logger:         logger.Default.LogMode(logger.Warn), // Limits logging overhead
+		TranslateError: true,                                // 👈 Enable this
 	})
 	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
@@ -75,7 +75,7 @@ func initDB(dsn string) *gorm.DB {
 	log.Println("Database connection pool configured successfully.")
 
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{},&models.RefreshToken{},&models.Workspace{},&models.WorkspaceMember{},&models.Channel{},&models.ChannelMember{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -84,7 +84,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3003")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
@@ -97,7 +97,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler,channel *handlers.ChannelHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
@@ -123,5 +123,11 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 		protectedWorkspace.GET("/:id", workspace.GetWorkspaceById)
 	}
 
+	protectedChannel := v1.Group("/channels")
+	protectedChannel.Use(middleware.AuthRequired())
+	{
+		protectedChannel.POST("", channel.HandleCreateChannel)
+		protectedChannel.GET("/:workspaceId", channel.HandleGetWorkspaceChannels)
+	}
 
 }

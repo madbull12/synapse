@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"errors"
+	"net/http"
 	"server/internal/apperr"
 	"server/internal/apputil"
 	"server/internal/dto"
@@ -22,22 +22,16 @@ func NewChannelHandler(channelService service.ChannelService) *ChannelHandler {
 }
 
 func (h *ChannelHandler) HandleCreateChannel(c *gin.Context) {
+	userId, err := apputil.GetUserID(c)
+
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 	workspaceIdStr := c.Param("workspaceId")
 	workspaceId, err := uuid.Parse(workspaceIdStr)
 	if err != nil {
 		dto.RespondError(c, apperr.BadRequest("INVALID_WORKSPACE_ID", "The provided workspace ID is invalid"))
-		return
-	}
-
-	userIdVal, exists := c.Get("user_id")
-	if !exists {
-		dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Authentication required"))
-		return
-	}
-	userId, ok := userIdVal.(uuid.UUID)
-	if !ok {
-		err := errors.New("type assertion failed: user_id is not a uuid.UUID")
-		dto.RespondError(c, apperr.Internal(err, "Failed to parse user session"))
 		return
 	}
 
@@ -51,6 +45,30 @@ func (h *ChannelHandler) HandleCreateChannel(c *gin.Context) {
 		dto.RespondError(c, err)
 		return
 	}
-	dto.RespondSuccess(c, 201,"Channel created successfully", channel)
+	dto.RespondSuccess(c, 201, "Channel created successfully", channel)
+
+}
+
+func (h *ChannelHandler) HandleGetWorkspaceChannels(c *gin.Context) {
+	userId, err := apputil.GetUserID(c)
+
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
+	workspaceIdStr := c.Param("workspaceId")
+	workspaceId, err := uuid.Parse(workspaceIdStr)
+	if err != nil {
+		dto.RespondError(c, apperr.BadRequest("INVALID_WORKSPACE_ID", "The provided workspace ID is invalid"))
+		return
+	}
+
+	channels, err := h.channelService.GetWorkspaceChannels(c.Request.Context(), workspaceId, userId)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
+
+	dto.RespondSuccess(c, http.StatusOK, "Channels retrieved successfully", channels)
 
 }

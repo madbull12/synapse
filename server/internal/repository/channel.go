@@ -12,6 +12,7 @@ type ChannelRepository interface {
 	CreateChannel(ctx context.Context, db *gorm.DB, channel *models.Channel) error
 	AddChannelMember(ctx context.Context, db *gorm.DB, member *models.ChannelMember) error
 	IsUserInChannel(ctx context.Context, channelId uuid.UUID, userId uuid.UUID) (bool, error)
+	GetWorkspaceChannels(ctx context.Context, workspaceId uuid.UUID) ([]*models.Channel, error)
 }
 
 type channelRepository struct {
@@ -41,4 +42,13 @@ func (r *channelRepository) IsUserInChannel(ctx context.Context, channelId uuid.
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *channelRepository) GetWorkspaceChannels(ctx context.Context, workspaceId uuid.UUID) ([]*models.Channel, error) {
+	var channels []*models.Channel
+	err := r.db.WithContext(ctx).Preload("Members").Where("workspace_id = ?", workspaceId).Find(&channels).Error
+	if err != nil {
+		return nil, err
+	}
+	return channels, nil
 }

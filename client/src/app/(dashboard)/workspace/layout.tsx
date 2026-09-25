@@ -27,7 +27,7 @@ export default async function Layout({
         style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
       >
         <div className="flex h-screen w-screen overflow-hidden bg-background">
-          <AppSidebar />
+          <AppSidebar workspaces={workspaces} />
 
           <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
             <div className="flex-1 overflow-y-auto bg-background">
