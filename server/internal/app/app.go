@@ -33,15 +33,19 @@ func Run(cfg *Config) {
 	userSrv := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userSrv)
 
-	workspaceRepo := repository.NewWorkspaceRepository(db)
-	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo)
-	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
-
 	workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
+
 
 	channelRepo := repository.NewChannelRepository(db)
 	channelSrv := service.NewChannelService(db, channelRepo, workspaceMemberRepo)
 	channelHandler := handlers.NewChannelHandler(channelSrv)
+
+	workspaceRepo := repository.NewWorkspaceRepository(db)
+	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo,channelRepo)
+	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
+
+
+	
 
 	r := gin.Default()
 	setupCORS(r)
