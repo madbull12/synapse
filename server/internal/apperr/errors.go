@@ -66,11 +66,17 @@ func ValidationError(fields []FieldError) *AppError {
 	}
 }
 
-func Internal(err error) *AppError {
-	return &AppError{
-		StatusCode: http.StatusInternalServerError,
-		Code:       "INTERNAL_ERROR",
-		Message:    "An unexpected error occurred.",
-		Err:        err,
-	}
+func Internal(err error, customMsg ...string) *AppError {
+    message := "An unexpected error occurred. Please try again later."
+    
+    if len(customMsg) > 0 && customMsg[0] != "" {
+        message = customMsg[0]
+    }
+
+    return &AppError{
+        StatusCode: http.StatusInternalServerError,
+        Code:       "INTERNAL_ERROR",
+        Message:    message, 
+        Err:        err,    
+    }
 }

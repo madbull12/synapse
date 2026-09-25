@@ -36,8 +36,14 @@ import WorkspaceDropdown from "@/features/workspace/components/workspace-dropdow
 import UserDropdown from "@/features/workspace/components/user-dropdown";
 import { useWorkspaceById } from "@/features/workspace/hooks/queries/use-workspace";
 import { useParams } from "next/navigation";
+import { WorkspaceDTO } from "@/features/workspace/types/api";
 
-export function AppSidebar() {
+interface Props {
+
+  workspaces: WorkspaceDTO[] | null
+}
+
+export function AppSidebar({ workspaces }: Props) {
   const [isChannelCollapsed, setIsChannelCollapsed] = useState(true);
   const [isDirectMessageCollapsed, setIsDirectMessageCollapsed] =
     useState(true);
@@ -50,7 +56,7 @@ export function AppSidebar() {
     <Sidebar>
       <div className="flex h-full w-full overflow-hidden">
         <div className="h-full shrink-0 border-r border-border/40">
-          <WorkspaceRail />
+          {(workspaces && workspaces.length > 0) && <WorkspaceRail />}
         </div>
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">

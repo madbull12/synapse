@@ -25,9 +25,9 @@ func (h *WorkspaceHandler) HandleCreateWorkspace(c *gin.Context) {
 		dto.RespondError(c, err)
 		return
 	}
- 	var req service.CreateWorkspaceRequest
+	var req service.CreateWorkspaceRequest
 	if !apputil.BindAndValidate(c, &req) {
-		return 
+		return
 	}
 
 	workspace, err := h.srv.CreateWorkspace(c.Request.Context(), userID, &req)
@@ -36,45 +36,45 @@ func (h *WorkspaceHandler) HandleCreateWorkspace(c *gin.Context) {
 		return
 	}
 
-	dto.RespondSuccess(c, 201,"Workspace created successfully", workspace)
+	dto.RespondSuccess(c, 201, "Workspace created successfully", workspace)
 }
 
 func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
-    userID, err := apputil.GetUserID(c)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	userID, err := apputil.GetUserID(c)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    workspaces, err := h.srv.GetWorkspacesForUser(c.Request.Context(), userID)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	workspaces, err := h.srv.GetWorkspacesForUser(c.Request.Context(), userID)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    dto.RespondSuccess(c, http.StatusOK, "Workspaces retrieved successfully", workspaces)
+	dto.RespondSuccess(c, http.StatusOK, "Workspaces retrieved successfully", workspaces)
 }
 
 func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
-    idParam := c.Param("id")
-    workspaceId, err := uuid.Parse(idParam)
-    if err != nil {
-        dto.RespondError(c, apperr.BadRequest("INVALID_UUID", "Provided workspace ID is invalid"))
-        return
-    }
 
-    userIdVal, exists := c.Get("userID") 
-    if !exists {
-        dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "User session not found"))
-        return
-    }
-    userId := userIdVal.(uuid.UUID)
+	userId, err := apputil.GetUserID(c)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    workspace, err := h.srv.GetWorkspaceForUser(c.Request.Context(), workspaceId, userId)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	idParam := c.Param("id")
+	workspaceId, err := uuid.Parse(idParam)
+	if err != nil {
+		dto.RespondError(c, apperr.BadRequest("INVALID_UUID", "Provided workspace ID is invalid"))
+		return
+	}
 
-    dto.RespondSuccess(c, http.StatusOK, "Workspace retrieved successfully", workspace)
+	workspace, err := h.srv.GetWorkspaceForUser(c.Request.Context(), workspaceId, userId)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
+
+	dto.RespondSuccess(c, http.StatusOK, "Workspace retrieved successfully", workspace)
 }
