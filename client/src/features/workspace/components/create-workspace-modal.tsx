@@ -95,7 +95,7 @@ export default function CreateWorkspaceModal({
         </TooltipContent>
       </Tooltip>
 
-      <CredenzaContent className="sm:max-w-[425px]">
+      <CredenzaContent className="sm:max-w-106.25">
         <CredenzaHeader>
           <CredenzaTitle>Create a workspace</CredenzaTitle>
           <CredenzaDescription>

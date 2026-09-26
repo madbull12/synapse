@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import CreateWorkspaceModal from "@/features/workspace/components/create-workspace-modal";
 
 const NoWorkspace = () => {
   return (
@@ -12,7 +13,10 @@ const NoWorkspace = () => {
         You haven't joined or created any workspaces. Get started by creating
         your first one below.
       </p>
-      <Button>Create Workspace</Button>
+      <CreateWorkspaceModal>
+        <Button>Create Workspace</Button>
+
+      </CreateWorkspaceModal>
     </div>
   );
 };

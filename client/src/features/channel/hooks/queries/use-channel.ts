@@ -1,12 +1,11 @@
-import { APIError } from "@/types";
-import { useQuery } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { channelService } from "@/features/channel/service";
 
-export const useWorkspaceChannels = (workspaceId: string) => {
-  return useQuery<any, AxiosError<APIError>>({
-    queryKey: ["workspaces", workspaceId],
+
+export function useWorkspaceChannels(workspaceId: string) {
+  return useSuspenseQuery({
+    queryKey: ["workspace-channels", workspaceId],
     queryFn: () => channelService.getWorkspaceChannels(workspaceId),
-    enabled: !!workspaceId,
+    // enabled: !!workspaceId
   });
-};
+}

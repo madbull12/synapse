@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -14,15 +13,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Collapsible,
   CollapsibleContent,
@@ -93,7 +84,17 @@ export function AppSidebar({ workspaces }: Props) {
                 </CollapsibleTrigger>
                 <SidebarGroupContent>
                   <CollapsibleContent>
-                    <ChannelList />
+                    <Suspense
+                      fallback={
+                        <div className="px-2 py-1 text-xs text-muted-foreground animate-pulse">
+                          Loading channels...
+                        </div>
+                      }
+                    >
+                      <ChannelList />
+
+
+                    </Suspense>
                   </CollapsibleContent>
                 </SidebarGroupContent>
               </Collapsible>

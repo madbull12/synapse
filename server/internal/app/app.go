@@ -35,17 +35,13 @@ func Run(cfg *Config) {
 
 	workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
 
-
 	channelRepo := repository.NewChannelRepository(db)
 	channelSrv := service.NewChannelService(db, channelRepo, workspaceMemberRepo)
 	channelHandler := handlers.NewChannelHandler(channelSrv)
 
 	workspaceRepo := repository.NewWorkspaceRepository(db)
-	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo,channelRepo)
+	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
-
-
-	
 
 	r := gin.Default()
 	setupCORS(r)
@@ -130,7 +126,7 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	protectedChannel := v1.Group("/channels")
 	protectedChannel.Use(middleware.AuthRequired())
 	{
-		protectedChannel.POST("", channel.HandleCreateChannel)
+		protectedChannel.POST("/:workspaceId", channel.HandleCreateChannel)
 		protectedChannel.GET("/:workspaceId", channel.HandleGetWorkspaceChannels)
 	}
 
