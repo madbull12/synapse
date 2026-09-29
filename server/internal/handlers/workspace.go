@@ -39,6 +39,27 @@ func (h *WorkspaceHandler) HandleCreateWorkspace(c *gin.Context) {
 	dto.RespondSuccess(c, 201, "Workspace created successfully", workspace)
 }
 
+func (h *WorkspaceHandler) HandleAddMember(c *gin.Context) {
+    workspaceID, err := uuid.Parse(c.Param("workspaceId"))
+    if err != nil {
+        dto.RespondError(c, apperr.BadRequest("INVALID_ID","Invalid workspace ID format"))
+        return
+    }
+
+    var req service.AddWorkspaceMemberRequest
+    if !apputil.BindAndValidate(c, &req) {
+        return
+    }
+
+    err = h.srv.AddMemberToWorkspace(c.Request.Context(), workspaceID, &req)
+    if err != nil {
+        dto.RespondError(c, err)
+        return
+    }
+
+    dto.RespondSuccess(c, 200, "Member added to workspace successfully", nil)
+}
+
 func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
 	userID, err := apputil.GetUserID(c)
 	if err != nil {

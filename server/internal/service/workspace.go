@@ -18,16 +18,23 @@ type CreateWorkspaceRequest struct {
 	LogoURL string `json:"logo_url"`
 }
 
+type AddWorkspaceMemberRequest struct {
+    Email string `json:"email" binding:"required,email"`
+    Role  string `json:"role"` // e.g., "member", "admin"
+}
+
 type WorkspaceService interface {
 	CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
 	GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
 	GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
+	AddMemberToWorkspace(ctx context.Context, workspace uuid.UUID, req *AddWorkspaceMemberRequest) error
 }
 
 type workspaceService struct {
 	db                  *gorm.DB
 	workspaceRepository repository.WorkspaceRepository
 	channelRepository   repository.ChannelRepository
+	authRepository		repository.AuthRepository
 }
 
 func NewWorkspaceService(db *gorm.DB, workspaceRepository repository.WorkspaceRepository, channelRepository repository.ChannelRepository) WorkspaceService {
@@ -62,8 +69,8 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID
 			JoinedAt:    time.Now(),
 		}
 
-		if err := tx.WithContext(ctx).Create(member).Error; err != nil {
-			return err
+		if err := s.workspaceRepository.AddMember(ctx, tx, member); err != nil {
+    		return err
 		}
 		generalChannel := &models.Channel{
 			ID:          uuid.New(),
@@ -95,6 +102,30 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID
 
 	return workspace, nil
 
+}
+func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID uuid.UUID, req *AddWorkspaceMemberRequest) error {
+    user, err := s.authRepository.FindByEmail(ctx, req.Email)
+    if err != nil {
+        return err 
+    }
+
+    role := strings.TrimSpace(req.Role)
+    if role == "" {
+        role = "member"
+    }
+
+    member := &models.WorkspaceMember{
+        WorkspaceID: workspaceID,
+        UserID:      user.ID,
+        Role:        role,
+        JoinedAt:    time.Now(),
+    }
+
+    if err := s.workspaceRepository.AddMember(ctx, s.db, member); err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error) {

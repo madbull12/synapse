@@ -56,7 +56,7 @@ func Run(cfg *Config) {
 func initDB(dsn string) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger:         logger.Default.LogMode(logger.Warn), // Limits logging overhead
-		TranslateError: true,                                // 👈 Enable this
+		TranslateError: true,                             
 	})
 	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
@@ -84,7 +84,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3003")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
@@ -119,6 +119,7 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	protectedWorkspace.Use(middleware.AuthRequired())
 	{
 		protectedWorkspace.POST("", workspace.HandleCreateWorkspace)
+		protectedWorkspace.POST("/:workspaceId/members", workspace.HandleAddMember)
 		protectedWorkspace.GET("", workspace.HandleGetUserWorkspaces)
 		protectedWorkspace.GET("/:id", workspace.GetWorkspaceById)
 	}

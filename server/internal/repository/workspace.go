@@ -12,6 +12,7 @@ type WorkspaceRepository interface {
 	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error)
 	GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
+	AddMember(ctx context.Context, db *gorm.DB, workspace *models.WorkspaceMember) error
 }
 
 type workspaceRepository struct {
@@ -24,6 +25,11 @@ func NewWorkspaceRepository(db *gorm.DB) WorkspaceRepository {
 
 func (r *workspaceRepository) Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error {
     return db.WithContext(ctx).Create(workspace).Error
+}
+
+
+func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error {
+    return db.WithContext(ctx).Create(member).Error
 }
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
