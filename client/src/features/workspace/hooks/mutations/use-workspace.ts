@@ -10,7 +10,7 @@ export const useCreateWorkspace = () => {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.userId);
   return useMutation<
-    APIResponse<any>,
+    APIResponse<string>,
     AxiosError<APIError>,
     CreateWorkspaceDTO
   >({

@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { fetchUserWorkspaces } from "@/features/user/service/server";
 import NoWorkspace from "@/features/workspace/components/no-workspace";
 import { redirect } from "next/navigation";

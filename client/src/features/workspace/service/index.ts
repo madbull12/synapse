@@ -4,6 +4,7 @@ import {
   WorkspaceByIdResponse,
   WorkspaceResponse,
 } from "@/features/workspace/types/api";
+import { APIResponse } from "@/types";
 
 export const workspaceService = {
   async getUserWorkspaces(): Promise<WorkspaceResponse> {
@@ -12,7 +13,7 @@ export const workspaceService = {
   },
 
   async createWorkspace(data: CreateWorkspaceDTO) {
-    const res = await privateApi.post("/workspaces", data);
+    const res = await privateApi.post<APIResponse<string>>("/workspaces", data);
     return res.data;
   },
 

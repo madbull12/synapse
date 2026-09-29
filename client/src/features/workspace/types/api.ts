@@ -1,3 +1,4 @@
+import { UserDTO } from "@/features/user/types/api";
 import { APIResponse } from "@/types";
 
 export type CreateWorkspaceDTO = {
@@ -12,13 +13,7 @@ export type WorkspaceDTO = {
   slug: string;
   logo_url?: string;
   owner_id: string;
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    created_at: string;
-    updated_at: string;
-  }[];
+  users: UserDTO[];
   created_at: string;
   updated_at: string;
 };

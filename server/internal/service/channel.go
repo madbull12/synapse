@@ -44,7 +44,7 @@ func (s *channelService) CreateChannel(ctx context.Context, workspaceId uuid.UUI
 		return nil, apperr.Internal(err)
 	}
 
-	if role != "admin" {
+	if role == "member" {
 		return nil, apperr.Forbidden("ADMIN_REQUIRED", "Only workspace administrators can create channels")
 	}
 

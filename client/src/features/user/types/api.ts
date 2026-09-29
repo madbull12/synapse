@@ -1,9 +1,9 @@
 import { APIResponse } from "@/types";
 
-export interface User {
+export interface UserDTO {
   id: string;
   email: string;
   name?: string;
   created_at: string;
 }
-export type UserResponse = APIResponse<User>;
+export type UserResponse = APIResponse<UserDTO>;

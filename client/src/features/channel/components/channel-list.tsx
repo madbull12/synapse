@@ -22,9 +22,9 @@ const ChannelList = () => {
   return (
     <ScrollArea>
       <div className="max-h-125">
-        {channels.map((channel) => (
+        {channels.data.map((channel) => (
           <div
-            key={channel}
+            key={channel.id}
             className="text-sm flex items-center gap-x-2 cursor-pointer rounded-md p-2 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <span>#</span>

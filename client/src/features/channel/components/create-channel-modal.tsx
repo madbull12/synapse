@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/tooltip";
 import { ModalFooter } from "@/components/ui/credenza-footer";
 import { Switch } from "@/components/ui/switch";
+import { useCreateChannel } from "@/features/channel/hooks/mutations/use-channel";
+import { useParams } from "next/navigation";
 
 const RESERVED_NAMES = ["settings", "admin", "api", "general"];
 
@@ -74,15 +76,17 @@ export default function CreateChannelModal() {
     },
   });
 
-  function onSubmit(data: CreateChannelFormData) {
-    try {
-      console.log("Submitting channel values:", data);
+  const { workspaceId } = useParams();
 
-      form.reset();
-      setOpen(false);
-    } catch (error) {
-      console.error(error);
-    }
+  const { mutate: createChannel, isPending } = useCreateChannel(workspaceId as string)
+
+  function onSubmit(data: CreateChannelFormData) {
+    createChannel(data, {
+      onSuccess: () => {
+        form.reset();
+        setOpen(false);
+      }
+    })
   }
 
   return (
@@ -197,7 +201,7 @@ export default function CreateChannelModal() {
             formId="create-channel-form"
             submitLabel={"Create Channel"}
             cancelLabel="Cancel"
-            // isLoading={isLoading}
+            isLoading={isPending}
             onCancel={() => setOpen(false)}
           />
         </CredenzaFooter>
