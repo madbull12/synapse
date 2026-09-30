@@ -14,13 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { WorkspaceDTO } from "@/features/workspace/types/api";
+import InviteMemberModal from "./invite-member-workspace-modal";
 
 type Props = {
   workspaceById: WorkspaceDTO;
 };
 
 export default function WorkspaceDropdown({ workspaceById }: Props) {
-  console.log("Workspace: ", workspaceById);
   const activeWorkspace = {
     name: workspaceById.name,
     initials: workspaceById.name
@@ -89,12 +89,17 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
         </DropdownMenuLabel>
 
         <DropdownMenuGroup className="space-y-0.5">
-          <DropdownMenuItem className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
-            <UserPlus className="size-4 text-muted-foreground shrink-0" />
-            <span className="text-xs text-foreground font-medium">
-              Invite members
-            </span>
-          </DropdownMenuItem>
+          <InviteMemberModal>
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md w-full"
+            >
+              <UserPlus className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-foreground font-medium">
+                Invite members
+              </span>
+            </DropdownMenuItem>
+          </InviteMemberModal>
 
           <DropdownMenuItem className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
             <Users className="size-4 text-muted-foreground shrink-0" />
