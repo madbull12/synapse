@@ -1,5 +1,6 @@
 import { privateApi } from "@/lib/api";
 import {
+  AddMemberToWorkspaceDTO,
   CreateWorkspaceDTO,
   WorkspaceByIdResponse,
   WorkspaceResponse,
@@ -23,4 +24,10 @@ export const workspaceService = {
     );
     return res.data;
   },
+
+  async addMemberToWorkspace(data: AddMemberToWorkspaceDTO, workspaceId: string) {
+    const res = await privateApi.post<APIResponse<string>>(`/${workspaceId}/members`, data);
+
+    return res.data
+  }
 };

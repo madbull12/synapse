@@ -7,6 +7,12 @@ export type CreateWorkspaceDTO = {
   slug: string;
 };
 
+export type AddMemberToWorkspaceDTO = {
+  email: string
+  role: string
+  workspaceId: string
+}
+
 export type WorkspaceDTO = {
   id: string;
   name: string;
