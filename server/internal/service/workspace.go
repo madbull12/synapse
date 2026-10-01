@@ -23,11 +23,18 @@ type AddWorkspaceMemberRequest struct {
 	Role  string `json:"role"` // e.g., "member", "admin"
 }
 
+type SendInvitationRequest struct {
+	Email string `json:"email" binding:"required,email"`
+	Role  string `json:"role" binding:"omitempty,oneof=member admin"`
+}
+
 type WorkspaceService interface {
 	CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
 	GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
 	GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
 	AddMemberToWorkspace(ctx context.Context, workspace uuid.UUID, req *AddWorkspaceMemberRequest) error
+	SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) 
+	AcceptInvitation(ctx context.Context, invitationID uuid.UUID, userID uuid.UUID) error
 }
 
 type workspaceService struct {
@@ -128,6 +135,72 @@ func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID
 	return nil
 }
 
+
+func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) {
+	role := strings.TrimSpace(req.Role)
+	if role == "" {
+		role = "member"
+	}
+
+	invite := &models.WorkspaceInvitation{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		Email:       strings.ToLower(strings.TrimSpace(req.Email)),
+		Role:        role,
+		InvitedByID: inviterID,
+		Status:      models.InvitePending,
+		ExpiresAt:   time.Now().Add(7 * 24 * time.Hour), // 7 days expiration
+	}
+
+	if err := s.workspaceRepository.CreateInvitation(ctx, s.db, invite); err != nil {
+		return nil, err
+	}
+
+	return invite, nil
+}
+
+func (s *workspaceService) AcceptInvitation(ctx context.Context, invitationID uuid.UUID, userID uuid.UUID) error {
+	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		invite, err := s.workspaceRepository.FindInvitationByID(ctx, tx, invitationID)
+		if err != nil {
+			return apperr.NotFound("NOT_FOUND","Invitation not found")
+		}
+
+		if invite.Status != models.InvitePending {
+			return apperr.BadRequest("INVITATION_PROCESSED","This invitation has already been processed.")
+		}
+		if time.Now().After(invite.ExpiresAt) {
+			return apperr.BadRequest("INVITATION_EXPIRED","This invitation has expired.")
+		}
+
+		user, err := s.authRepository.FindByID(ctx, userID)
+		if err != nil {
+			return apperr.NotFound("NOT_FOUND","User not found")
+		}
+
+
+		if strings.ToLower(user.Email) != invite.Email {
+			return apperr.Forbidden("UNAUTHORIZED_INVITATION_ACCESS","This invitation was sent to a different email address.")
+		}
+
+		member := &models.WorkspaceMember{
+			WorkspaceID: invite.WorkspaceID,
+			UserID:      userID,
+			Role:        invite.Role,
+			JoinedAt:    time.Now(),
+		}
+		if err := s.workspaceRepository.AddMember(ctx, tx, member); err != nil {
+			return err
+		}
+
+		if err := s.workspaceRepository.UpdateInvitationStatus(ctx, tx, invite.ID, models.InviteAccepted); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error) {
 	workspaces, err := s.workspaceRepository.GetByUserId(ctx, userID)
 	if err != nil {
@@ -139,7 +212,6 @@ func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid
 func (s *workspaceService) GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
 	workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, workspaceId, userId)
 	if err != nil {
-		// If GORM returns record not found, treat it as a clean Forbidden or Not Found
 		return nil, apperr.Forbidden("UNAUTHORIZED_WORKSPACE_ACCESS", "You do not have access to this workspace")
 	}
 	return workspace, nil
