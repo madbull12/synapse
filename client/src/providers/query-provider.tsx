@@ -35,7 +35,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             const errorData = axiosError.response?.data;
             const status = axiosError.response?.status;
 
-            console.log("errordata: ", axiosError.response);
+            console.log("errordata: ", errorData);
 
             // 1. Skip global toasts for validation errors (422)
             // since local components handle them via form field mapping.

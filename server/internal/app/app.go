@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"server/internal/apperr"
+	"server/internal/dto"
 	"server/internal/handlers"
 	"server/internal/middleware"
 	"server/internal/models"
@@ -44,6 +46,9 @@ func Run(cfg *Config) {
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
 	r := gin.Default()
+	r.NoRoute(func(c *gin.Context) {
+		dto.RespondError(c, apperr.NotFound("NOT_FOUND", "The requested endpoint does not exist"))
+	})
 	setupCORS(r)
 	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler)
 
@@ -56,7 +61,7 @@ func Run(cfg *Config) {
 func initDB(dsn string) *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger:         logger.Default.LogMode(logger.Warn), // Limits logging overhead
-		TranslateError: true,                             
+		TranslateError: true,
 	})
 	if err != nil {
 		log.Fatalf("Database connection failed: %v", err)
@@ -84,7 +89,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3003")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")

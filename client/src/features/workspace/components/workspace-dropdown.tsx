@@ -14,7 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { WorkspaceDTO } from "@/features/workspace/types/api";
-import InviteMemberModal from "./invite-member-workspace-modal";
+import InviteMemberModal from "@/features/workspace/components/invite-member-workspace-modal";
+import MemberManagementModal from "@/features/workspace/components/member-management-modal";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 type Props = {
   workspaceById: WorkspaceDTO;
@@ -33,10 +36,12 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
     memberCount: 32,
   };
 
-  const userid = useAuthStore((state) => state.userId);
-
+  const userId = useAuthStore((state) => state.userId);
+  const { workspaceId } = useParams()
   return (
-    <DropdownMenu>
+    <DropdownMenu
+
+    >
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -101,18 +106,27 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
             </DropdownMenuItem>
           </InviteMemberModal>
 
-          <DropdownMenuItem className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
-            <Users className="size-4 text-muted-foreground shrink-0" />
-            <span className="text-xs text-foreground font-medium">
-              Manage members
-            </span>
-          </DropdownMenuItem>
+          <MemberManagementModal>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
+              <Users className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-foreground font-medium">
+                Manage members
+              </span>
+            </DropdownMenuItem>
 
-          <DropdownMenuItem className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
-            <Settings className="size-4 text-muted-foreground shrink-0" />
-            <span className="text-xs text-foreground font-medium">
-              Workspace settings
-            </span>
+          </MemberManagementModal>
+
+
+          <DropdownMenuItem asChild>
+            <Link
+              href={`/workspace/${workspaceId}/settings/general`}
+              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md"
+            >
+              <Settings className="size-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-foreground font-medium">
+                Workspace settings
+              </span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
 

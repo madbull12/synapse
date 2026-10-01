@@ -159,7 +159,9 @@ export default function InviteMemberModal({
                       >
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent onPointerDownOutside={(e) => {
+                        e.preventDefault();
+                      }}>
                         <SelectItem value="member">Member</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
