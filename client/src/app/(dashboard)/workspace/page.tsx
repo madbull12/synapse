@@ -6,7 +6,7 @@ const WorkspacePage = async () => {
   const workspaces = await fetchUserWorkspaces();
 
   if (workspaces && workspaces.length > 0) {
-    redirect(`/workspace/${workspaces[0].id}`);
+    redirect(`/workspace/${workspaces[0].id}/channel/general`);
   }
   return <NoWorkspace />;
 };

@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
@@ -35,7 +34,6 @@ export function WorkspaceRail() {
 
   return (
     <div className="flex h-full p-3 flex-col items-center gap-y-4 border-r border-border bg-sidebar-background py-3 select-none">
-      {/* Workspace Icons List */}
       <div className="flex w-full flex-1 flex-col items-center gap-y-3">
         {data?.data?.map((workspace) => {
           const isActive = activeWorkspaceId === workspace.id;
@@ -44,7 +42,7 @@ export function WorkspaceRail() {
             <Tooltip key={workspace.id}>
               <TooltipTrigger asChild>
                 <Link
-                  href={`/workspace/${workspace.id}`}
+                  href={`/workspace/${workspace.id}/channel/general`}
                   onMouseEnter={() => prefetchWorkspaceDetail(workspace.id)}
                   className="group relative flex items-center justify-center"
                 >
@@ -55,7 +53,6 @@ export function WorkspaceRail() {
                     )}
                   />
 
-                  {/* Workspace Avatar Frame */}
                   <Avatar
                     className={cn(
                       "size-11 rounded-2xl cursor-pointer font-semibold text-sm transition-all duration-200 ease-out",
