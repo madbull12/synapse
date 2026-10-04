@@ -80,7 +80,7 @@ func initDB(dsn string) *gorm.DB {
 	log.Println("Database connection pool configured successfully.")
 
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{},&models.WorkspaceInvitation{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 

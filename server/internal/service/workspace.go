@@ -1,7 +1,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"os"
 	"server/internal/apperr"
 	"server/internal/models"
 	"server/internal/repository"
@@ -34,23 +42,71 @@ type WorkspaceService interface {
 	GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
 	AddMemberToWorkspace(ctx context.Context, workspace uuid.UUID, req *AddWorkspaceMemberRequest) error
 	SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) 
-	AcceptInvitation(ctx context.Context, invitationID uuid.UUID, userID uuid.UUID) error
+	AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error
 }
 
 type workspaceService struct {
-	db                  *gorm.DB
-	workspaceRepository repository.WorkspaceRepository
-	channelRepository   repository.ChannelRepository
-	authRepository      repository.AuthRepository
+    db                        *gorm.DB
+    workspaceRepository       repository.WorkspaceRepository
+    channelRepository         repository.ChannelRepository
+    authRepository            repository.AuthRepository
+    workspaceMemberRepository repository.WorkspaceMemberRepository
 }
 
-func NewWorkspaceService(db *gorm.DB, workspaceRepository repository.WorkspaceRepository, channelRepository repository.ChannelRepository) WorkspaceService {
-	return &workspaceService{
-		db:                  db,
-		workspaceRepository: workspaceRepository,
-		channelRepository:   channelRepository,
-	}
+func NewWorkspaceService(
+    db *gorm.DB,
+    workspaceRepository repository.WorkspaceRepository,
+    channelRepository repository.ChannelRepository,
+    authRepository repository.AuthRepository,
+    workspaceMemberRepository repository.WorkspaceMemberRepository,
+) WorkspaceService {
+    return &workspaceService{
+        db:                        db,
+        workspaceRepository:       workspaceRepository,
+        channelRepository:         channelRepository,
+        authRepository:            authRepository,
+        workspaceMemberRepository: workspaceMemberRepository,
+    }
 }
+
+
+func generateSecureToken() string {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate secure token: %v", err))
+	}
+
+	return base64.RawURLEncoding.EncodeToString(b)
+}
+
+func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error {
+    apiKey := os.Getenv("RESEND_API_KEY")
+    
+    inviteURL := fmt.Sprintf("http://localhost:3000/register?token=%s", inviteToken)
+
+    payload := map[string]interface{}{
+        "from":    "Synapse <onboarding@resend.dev>",
+        "to":      []string{toEmail},
+        "subject": fmt.Sprintf("You've been invited to join %s on Synapse", workspaceName),
+        "html":    fmt.Sprintf(`<p>Hello,</p><p>You have been invited to join the <strong>%s</strong> workspace on Synapse.</p><p><a href="%s" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>`, workspaceName, inviteURL),
+    }
+
+    jsonPayload, _ := json.Marshal(payload)
+
+    req, _ := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(jsonPayload))
+    req.Header.Set("Authorization", "Bearer "+apiKey)
+    req.Header.Set("Content-Type", "application/json")
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil || resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("failed to send email: %v", err)
+    }
+
+    return nil
+}
+
 func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error) {
 	slug := strings.ToLower(strings.TrimSpace(req.Slug))
 	slug = strings.ReplaceAll(slug, " ", "-")
@@ -137,50 +193,120 @@ func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID
 
 
 func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) {
-	role := strings.TrimSpace(req.Role)
-	if role == "" {
-		role = "member"
-	}
+    email := strings.ToLower(strings.TrimSpace(req.Email))
+    role := strings.TrimSpace(req.Role)
+    if role == "" {
+        role = "member"
+    }
 
-	invite := &models.WorkspaceInvitation{
-		ID:          uuid.New(),
-		WorkspaceID: workspaceID,
-		Email:       strings.ToLower(strings.TrimSpace(req.Email)),
-		Role:        role,
-		InvitedByID: inviterID,
-		Status:      models.InvitePending,
-		ExpiresAt:   time.Now().Add(7 * 24 * time.Hour), // 7 days expiration
-	}
+    var invite *models.WorkspaceInvitation
+    
+    err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+        existingUser, err := s.authRepository.FindByEmail(ctx, email)
+        
+        if err == nil && existingUser != nil {
+            // SCENARIO A: User already exists! Check if they are already a member first.
+			isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx, workspaceID, existingUser.ID)
+            if err != nil {
+                return apperr.Internal(err, "failed to check existing workspace membership")
+            }
 
-	if err := s.workspaceRepository.CreateInvitation(ctx, s.db, invite); err != nil {
-		return nil, err
-	}
+            if !isMember {
+                // Directly add them as a workspace member if not already joined
+                membership := &models.WorkspaceMember{
+                    WorkspaceID: workspaceID,
+                    UserID:      existingUser.ID,
+                    Role:        role,
+                    JoinedAt:    time.Now(),
+                }
+                
+                if err := s.workspaceRepository.AddMember(ctx, tx, membership); err != nil {
+                    return apperr.Internal(err, "Failed to add existing user to workspace")
+                }
+            }
+            
+            // Return nil for invitation because no pending invite record was created
+            invite = nil
+            return nil
+        }
 
-	return invite, nil
+        // SCENARIO B: User does NOT exist yet. Proceed with the pending invitation token flow.
+        invite = &models.WorkspaceInvitation{
+            ID:          uuid.New(),
+            WorkspaceID: workspaceID,
+            Email:       email,
+            Role:        role,
+            InvitedByID: inviterID,
+            Token:       generateSecureToken(),
+            Status:      models.InvitePending,
+            ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
+        }
+
+        if err := s.workspaceRepository.CreateInvitation(ctx, tx, invite); err != nil {
+            return apperr.Internal(err, "failed to create workspace invitation")
+        }
+
+        return nil
+    })
+
+    if err != nil {
+        return nil, err
+    }
+
+    // If Scenario B was triggered (invite is not nil), dispatch the email asynchronously
+    if invite != nil {
+        go func() {
+            workspaceName, err := s.workspaceRepository.GetWorkspaceName(context.Background(), workspaceID)
+            if err != nil {
+                // Fallback or log error
+                workspaceName = "Synapse Workspace"
+            }
+            _ = SendWorkspaceInviteEmail(invite.Email, workspaceName, invite.Token)
+        }()
+    }
+
+    return invite, nil
 }
-
-func (s *workspaceService) AcceptInvitation(ctx context.Context, invitationID uuid.UUID, userID uuid.UUID) error {
+func (s *workspaceService) AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		invite, err := s.workspaceRepository.FindInvitationByID(ctx, tx, invitationID)
+		invite, err := s.workspaceRepository.FindInvitationByToken(ctx, tx, token)
 		if err != nil {
-			return apperr.NotFound("NOT_FOUND","Invitation not found")
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperr.NotFound("INVITATION_NOT_FOUND", "The invitation token is invalid or does not exist.")
+			}
+			return apperr.Internal(err, "failed to query workspace invitation by token")
 		}
 
 		if invite.Status != models.InvitePending {
-			return apperr.BadRequest("INVITATION_PROCESSED","This invitation has already been processed.")
+			return apperr.BadRequest("INVITATION_PROCESSED", "This invitation has already been processed.")
 		}
+
 		if time.Now().After(invite.ExpiresAt) {
-			return apperr.BadRequest("INVITATION_EXPIRED","This invitation has expired.")
+			return apperr.BadRequest("INVITATION_EXPIRED", "This invitation has expired.")
 		}
 
 		user, err := s.authRepository.FindByID(ctx, userID)
 		if err != nil {
-			return apperr.NotFound("NOT_FOUND","User not found")
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperr.NotFound("USER_NOT_FOUND", "User account not found.")
+			}
+			return apperr.Internal(err, "failed to query user for invitation acceptance")
 		}
 
+		if !strings.EqualFold(user.Email, invite.Email) {
+			return apperr.Forbidden("UNAUTHORIZED_INVITATION_ACCESS", "This invitation was sent to a different email address.")
+		}
 
-		if strings.ToLower(user.Email) != invite.Email {
-			return apperr.Forbidden("UNAUTHORIZED_INVITATION_ACCESS","This invitation was sent to a different email address.")
+		isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx,invite.WorkspaceID,userID)
+		if err != nil {
+			return apperr.Internal(err, "failed to check existing workspace membership")
+		}
+
+		if isMember {
+			if err := s.workspaceRepository.UpdateInvitationStatus(ctx, tx, invite.ID, models.InviteAccepted); err != nil {
+				return apperr.Internal(err, "failed to update invitation status")
+			}
+			return nil
 		}
 
 		member := &models.WorkspaceMember{
@@ -190,11 +316,11 @@ func (s *workspaceService) AcceptInvitation(ctx context.Context, invitationID uu
 			JoinedAt:    time.Now(),
 		}
 		if err := s.workspaceRepository.AddMember(ctx, tx, member); err != nil {
-			return err
+			return apperr.Internal(err, "failed to add member to workspace")
 		}
 
 		if err := s.workspaceRepository.UpdateInvitationStatus(ctx, tx, invite.ID, models.InviteAccepted); err != nil {
-			return err
+			return apperr.Internal(err, "failed to update invitation status")
 		}
 
 		return nil

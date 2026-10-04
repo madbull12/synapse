@@ -1,7 +1,7 @@
-import ChatPanel from "@/features/chat/components/chat-panel";
+import ChannelDashboard from "@/features/channel/components/channel-dashboard";
 
 const ChannelDetailPage = () => {
-  return <ChatPanel />;
+  return <ChannelDashboard />;
 };
 
 export default ChannelDetailPage;

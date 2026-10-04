@@ -16,6 +16,8 @@ type WorkspaceRepository interface {
 	CreateInvitation(ctx context.Context, db *gorm.DB, invite *models.WorkspaceInvitation) error
 	FindInvitationByID(ctx context.Context, db *gorm.DB, id uuid.UUID) (*models.WorkspaceInvitation, error)
 	UpdateInvitationStatus(ctx context.Context, db *gorm.DB, id uuid.UUID, status models.InvitationStatus) error
+	FindInvitationByToken(ctx context.Context, tx *gorm.DB, token string) (*models.WorkspaceInvitation, error)
+	GetWorkspaceName(ctx context.Context, workspaceID uuid.UUID) (string, error)
 }
 
 type workspaceRepository struct {
@@ -79,4 +81,35 @@ func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, workspaceId uu
 	}
 
 	return &workspace, nil
+}
+
+func (r *workspaceRepository) FindInvitationByToken(ctx context.Context, tx *gorm.DB, token string) (*models.WorkspaceInvitation, error) {
+	var invite models.WorkspaceInvitation
+
+	db := r.db
+	if tx != nil {
+		db = tx
+	}
+
+	err := db.WithContext(ctx).Where("token = ?", token).First(&invite).Error
+	if err != nil {
+		return nil, err 
+	}
+
+	return &invite, nil
+}
+
+func (r *workspaceRepository) GetWorkspaceName(ctx context.Context, workspaceID uuid.UUID) (string, error) {
+	var workspace models.Workspace
+
+	err := r.db.WithContext(ctx).
+		Select("name").
+		Where("id = ?", workspaceID).
+		First(&workspace).Error
+	
+	if err != nil {
+		return "", err 
+	}
+
+	return workspace.Name, nil
 }

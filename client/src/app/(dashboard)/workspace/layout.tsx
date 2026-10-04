@@ -31,7 +31,6 @@ export default async function Layout({
 
           <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
             <div className="flex-1 overflow-y-auto bg-background">
-              <WorkspaceHeader />
               {children}
             </div>
           </main>

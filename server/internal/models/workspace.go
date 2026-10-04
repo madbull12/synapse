@@ -41,6 +41,7 @@ type WorkspaceInvitation struct {
 	Email       string           `json:"email" gorm:"not null;index"`
 	Role        string           `json:"role" gorm:"not null;default:'member'"`
 	InvitedByID uuid.UUID        `json:"invited_by_id" gorm:"type:uuid;not null"`
+	Token       string           `gorm:"type:varchar(255);uniqueIndex;not null" json:"token"`
 	Status      InvitationStatus `json:"status" gorm:"type:varchar(20);not null;default:'PENDING'"`
 	ExpiresAt   time.Time        `json:"expires_at" gorm:"not null"`
 	CreatedAt   time.Time        `json:"created_at"`
