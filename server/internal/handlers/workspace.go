@@ -106,27 +106,26 @@ func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
 
 
 func (h *WorkspaceHandler) HandleAcceptInvitation(c *gin.Context) {
-	invitationID, err := uuid.Parse(c.Param("invitationId"))
-	if err != nil {
-		dto.RespondError(c, apperr.BadRequest("INVALID_ID","Invalid invitation ID format"))
-		return
-	}
+    token := c.Param("token")
+    if token == "" {
+        dto.RespondError(c, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required"))
+        return
+    }
 
-	userID, err := apputil.GetUserID(c)
-	if err != nil {
-		dto.RespondError(c, err)
-		return
-	}
+    userID, err := apputil.GetUserID(c)
+    if err != nil {
+        dto.RespondError(c, err)
+        return
+    }
 
-	err = h.srv.AcceptInvitation(c.Request.Context(), invitationID, userID)
-	if err != nil {
-		dto.RespondError(c, err)
-		return
-	}
+    err = h.srv.AcceptInvitationByToken(c.Request.Context(), token, userID)
+    if err != nil {
+        dto.RespondError(c, err)
+        return
+    }
 
-	dto.RespondSuccess(c, 200, "Invitation accepted successfully", nil)
+    dto.RespondSuccess(c, 200, "Invitation accepted successfully", nil)
 }
-
 func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
 
 	userId, err := apputil.GetUserID(c)

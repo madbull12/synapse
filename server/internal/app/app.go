@@ -42,7 +42,7 @@ func Run(cfg *Config) {
 	channelHandler := handlers.NewChannelHandler(channelSrv)
 
 	workspaceRepo := repository.NewWorkspaceRepository(db)
-	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo)
+	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo,authRepo, workspaceMemberRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
 	r := gin.Default()
