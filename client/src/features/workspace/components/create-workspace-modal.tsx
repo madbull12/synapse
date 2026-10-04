@@ -82,12 +82,14 @@ export default function CreateWorkspaceModal({
       {/* Trigger Button with Tooltip Integration */}
       <Tooltip delayDuration={200}>
         <CredenzaTrigger asChild>
-          <TooltipTrigger className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200 cursor-pointer">
-            {children ? (
-              children
-            ) : (
-              <p className="font-medium text-xs">Create Workspace</p>
-            )}
+          <TooltipTrigger asChild>
+            <div className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200 cursor-pointer">
+              {children ? (
+                children
+              ) : (
+                <p className="font-medium text-xs">Create Workspace</p>
+              )}
+            </div>
           </TooltipTrigger>
         </CredenzaTrigger>
         <TooltipContent side="right" sideOffset={12}>

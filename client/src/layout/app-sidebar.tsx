@@ -30,8 +30,7 @@ import { useParams } from "next/navigation";
 import { WorkspaceDTO } from "@/features/workspace/types/api";
 
 interface Props {
-
-  workspaces: WorkspaceDTO[] | null
+  workspaces: WorkspaceDTO[] | null;
 }
 
 export function AppSidebar({ workspaces }: Props) {
@@ -47,7 +46,7 @@ export function AppSidebar({ workspaces }: Props) {
     <Sidebar>
       <div className="flex h-full w-full overflow-hidden">
         <div className="h-full shrink-0 border-r border-border/40">
-          {(workspaces && workspaces.length > 0) && <WorkspaceRail />}
+          <WorkspaceRail />
         </div>
 
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
@@ -92,8 +91,6 @@ export function AppSidebar({ workspaces }: Props) {
                       }
                     >
                       <ChannelList />
-
-
                     </Suspense>
                   </CollapsibleContent>
                 </SidebarGroupContent>

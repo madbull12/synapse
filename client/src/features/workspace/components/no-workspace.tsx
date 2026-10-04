@@ -15,7 +15,6 @@ const NoWorkspace = () => {
       </p>
       <CreateWorkspaceModal>
         <Button>Create Workspace</Button>
-
       </CreateWorkspaceModal>
     </div>
   );
