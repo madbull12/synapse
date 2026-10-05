@@ -28,6 +28,7 @@ import UserDropdown from "@/features/workspace/components/user-dropdown";
 import { useWorkspaceById } from "@/features/workspace/hooks/queries/use-workspace";
 import { useParams } from "next/navigation";
 import { WorkspaceDTO } from "@/features/workspace/types/api";
+import { ChannelListSkeleton } from "@/features/channel/components/channel-list-skeleton";
 
 interface Props {
   workspaces: WorkspaceDTO[] | null;
@@ -83,13 +84,7 @@ export function AppSidebar({ workspaces }: Props) {
                 </CollapsibleTrigger>
                 <SidebarGroupContent>
                   <CollapsibleContent>
-                    <Suspense
-                      fallback={
-                        <div className="px-2 py-1 text-xs text-muted-foreground animate-pulse">
-                          Loading channels...
-                        </div>
-                      }
-                    >
+                    <Suspense fallback={<ChannelListSkeleton />}>
                       <ChannelList />
                     </Suspense>
                   </CollapsibleContent>

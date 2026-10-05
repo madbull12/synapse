@@ -1,6 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { fetchUserWorkspaces } from "@/features/user/service/server";
-import WorkspaceHeader from "@/features/workspace/components/workspace-header";
 import { AppSidebar } from "@/layout/app-sidebar";
 import {
   dehydrate,
@@ -21,15 +20,14 @@ export default async function Layout({
     queryKey: ["workspaces"],
     queryFn: async () => workspaces,
   });
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <SidebarProvider
         style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
       >
         <div className="flex h-screen w-screen overflow-hidden bg-background">
-          {workspaces && workspaces.length > 0 && (
-            <AppSidebar workspaces={workspaces} />
-          )}
+          <AppSidebar workspaces={workspaces} />
 
           <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
             <div className="flex-1 overflow-y-auto bg-background">
