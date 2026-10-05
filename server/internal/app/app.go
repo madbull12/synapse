@@ -126,7 +126,7 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 		protectedWorkspace.POST("", workspace.HandleCreateWorkspace)
 		protectedWorkspace.POST("/:workspaceId/members", workspace.HandleAddMember)
 		protectedWorkspace.POST("/:workspaceId/invitations", workspace.HandleSendInvitation)
-		protectedWorkspace.POST("/invitations/:invitationId/accept", workspace.HandleAcceptInvitation)
+		protectedWorkspace.POST("/invitations/:token/accept", workspace.HandleAcceptInvitation)
 		protectedWorkspace.GET("", workspace.HandleGetUserWorkspaces)
 		protectedWorkspace.GET("/:id", workspace.GetWorkspaceById)
 	}

@@ -1,14 +1,11 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"server/internal/apperr"
 	"server/internal/models"
@@ -17,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/resend/resend-go/v4"
 	"gorm.io/gorm"
 )
 
@@ -81,30 +79,35 @@ func generateSecureToken() string {
 }
 
 func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error {
-    apiKey := os.Getenv("RESEND_API_KEY")
-    
-    inviteURL := fmt.Sprintf("http://localhost:3000/register?token=%s", inviteToken)
+   apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("RESEND_API_KEY environment variable is not set")
+	}
 
-    payload := map[string]interface{}{
-        "from":    "Synapse <onboarding@resend.dev>",
-        "to":      []string{toEmail},
-        "subject": fmt.Sprintf("You've been invited to join %s on Synapse", workspaceName),
-        "html":    fmt.Sprintf(`<p>Hello,</p><p>You have been invited to join the <strong>%s</strong> workspace on Synapse.</p><p><a href="%s" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>`, workspaceName, inviteURL),
-    }
+	client := resend.NewClient(apiKey)
+	inviteURL := fmt.Sprintf("http://localhost:3000/register?token=%s", inviteToken)
 
-    jsonPayload, _ := json.Marshal(payload)
+	htmlContent := fmt.Sprintf(
+		`<p>Hello,</p><p>You have been invited to join the <strong>%s</strong> workspace on Synapse.</p><p><a href="%s" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>`,
+		workspaceName,
+		inviteURL,
+	)
 
-    req, _ := http.NewRequest("POST", "https://api.resend.com/emails", bytes.NewBuffer(jsonPayload))
-    req.Header.Set("Authorization", "Bearer "+apiKey)
-    req.Header.Set("Content-Type", "application/json")
+	params := &resend.SendEmailRequest{
+		From:    "Synapse <onboarding@resend.dev>",
+		To:      []string{toEmail},
+		Subject: fmt.Sprintf("You've been invited to join %s on Synapse", workspaceName),
+		Html:    htmlContent,
+		ReplyTo: "onboarding@resend.dev",
+	}
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil || resp.StatusCode != http.StatusOK {
-        return fmt.Errorf("failed to send email: %v", err)
-    }
+	ctx := context.Background()
+	_, err := client.Emails.SendWithContext(ctx, params)
+	if err != nil {
+		return fmt.Errorf("failed to send email via resend SDK: %v", err)
+	}
 
-    return nil
+	return nil
 }
 
 func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error) {

@@ -105,7 +105,7 @@ export default function InviteMemberModal({
         )}
       </CredenzaTrigger>
 
-      <CredenzaContent className="sm:max-w-106.25">
+      <CredenzaContent className="md:max-w-106.25">
         <CredenzaHeader>
           <CredenzaTitle>Invite member to workspace</CredenzaTitle>
           <CredenzaDescription>
@@ -159,9 +159,11 @@ export default function InviteMemberModal({
                       >
                         <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
-                      <SelectContent onPointerDownOutside={(e) => {
-                        e.preventDefault();
-                      }}>
+                      <SelectContent
+                        onPointerDownOutside={(e) => {
+                          e.preventDefault();
+                        }}
+                      >
                         <SelectItem value="member">Member</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
