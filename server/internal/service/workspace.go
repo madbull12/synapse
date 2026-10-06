@@ -79,26 +79,40 @@ func generateSecureToken() string {
 }
 
 func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error {
-   apiKey := os.Getenv("RESEND_API_KEY")
+	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
 		return fmt.Errorf("RESEND_API_KEY environment variable is not set")
 	}
 
 	client := resend.NewClient(apiKey)
-	inviteURL := fmt.Sprintf("http://localhost:3000/register?token=%s", inviteToken)
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
+	inviteURL := fmt.Sprintf("%s/register?token=%s", frontendURL, inviteToken)
 
 	htmlContent := fmt.Sprintf(
-		`<p>Hello,</p><p>You have been invited to join the <strong>%s</strong> workspace on Synapse.</p><p><a href="%s" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Accept Invitation</a></p>`,
+		`<div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px; color: #111827;">
+			<div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;">
+				<h2 style="margin-top: 0; color: #1f2937;">Workspace Invitation</h2>
+				<p>You have been invited to join the <strong>%s</strong> workspace on Synapse.</p>
+				<p style="margin: 25px 0;">
+					<a href="%s" style="background-color: #000000; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Accept Invitation</a>
+				</p>
+				<p style="font-size: 13px; color: #6b7280;">If you weren't expecting this invite, you can safely ignore this email.</p>
+			</div>
+		</div>`,
 		workspaceName,
 		inviteURL,
 	)
 
 	params := &resend.SendEmailRequest{
-		From:    "Synapse <onboarding@resend.dev>",
+		From:    "Synapse <noreply@mail.andrianlysander.com>",
 		To:      []string{toEmail},
 		Subject: fmt.Sprintf("You've been invited to join %s on Synapse", workspaceName),
 		Html:    htmlContent,
-		ReplyTo: "onboarding@resend.dev",
+		ReplyTo: "noreply@mail.andrianlysander.com",
 	}
 
 	ctx := context.Background()
