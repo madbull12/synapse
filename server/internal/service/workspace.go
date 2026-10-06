@@ -90,7 +90,7 @@ func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error 
 	if frontendURL == "" {
 		frontendURL = "http://localhost:3000"
 	}
-	inviteURL := fmt.Sprintf("%s/register?token=%s", frontendURL, inviteToken)
+	inviteURL := fmt.Sprintf("%s/auth/register?token=%s", frontendURL, inviteToken)
 
 	htmlContent := fmt.Sprintf(
 		`<div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px; color: #111827;">
