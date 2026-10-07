@@ -1,6 +1,8 @@
 package apputil
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"server/internal/apperr"
 	"server/internal/dto"
 
@@ -23,4 +25,9 @@ func BindAndValidate(c *gin.Context, req interface{}) bool {
 		return false
 	}
 	return true
+}
+
+func HashToken(rawToken string) string {
+	hash := sha256.Sum256([]byte(rawToken))
+	return hex.EncodeToString(hash[:])
 }

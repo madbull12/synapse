@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"server/internal/apperr"
+	"server/internal/apputil"
 	"server/internal/models"
 	"server/internal/repository"
 	"strings"
@@ -78,7 +79,7 @@ func generateSecureToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error {
+func SendWorkspaceInviteEmail(ctx context.Context, toEmail, workspaceName, inviteToken string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
 		return fmt.Errorf("RESEND_API_KEY environment variable is not set")
@@ -115,10 +116,55 @@ func SendWorkspaceInviteEmail(toEmail, workspaceName, inviteToken string) error 
 		ReplyTo: "noreply@mail.andrianlysander.com",
 	}
 
-	ctx := context.Background()
 	_, err := client.Emails.SendWithContext(ctx, params)
 	if err != nil {
-		return fmt.Errorf("failed to send email via resend SDK: %v", err)
+		return fmt.Errorf("failed to send invite email via resend SDK: %w", err)
+	}
+
+	return nil
+}
+
+// SendWorkspaceAddedEmail notifies an existing user that they've been added to a new workspace.
+func SendWorkspaceAddedEmail(ctx context.Context, toEmail, workspaceName string) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("RESEND_API_KEY environment variable is not set")
+	}
+
+	client := resend.NewClient(apiKey)
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
+	dashboardURL := fmt.Sprintf("%s/dashboard", frontendURL)
+
+	htmlContent := fmt.Sprintf(
+		`<div style="font-family: Arial, sans-serif; background-color: #f9fafb; padding: 30px; color: #111827;">
+			<div style="max-width: 500px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;">
+				<h2 style="margin-top: 0; color: #1f2937;">New Workspace Added</h2>
+				<p>You have been added to the <strong>%s</strong> workspace on Synapse.</p>
+				<p style="margin: 25px 0;">
+					<a href="%s" style="background-color: #000000; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+				</p>
+				<p style="font-size: 13px; color: #6b7280;">If you weren't expecting this, you can safely ignore this email.</p>
+			</div>
+		</div>`,
+		workspaceName,
+		dashboardURL,
+	)
+
+	params := &resend.SendEmailRequest{
+		From:    "Synapse <noreply@mail.andrianlysander.com>",
+		To:      []string{toEmail},
+		Subject: fmt.Sprintf("You've been added to %s on Synapse", workspaceName),
+		Html:    htmlContent,
+		ReplyTo: "noreply@mail.andrianlysander.com",
+	}
+
+	_, err := client.Emails.SendWithContext(ctx, params)
+	if err != nil {
+		return fmt.Errorf("failed to send added notification email via resend SDK: %w", err)
 	}
 
 	return nil
@@ -210,79 +256,92 @@ func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID
 
 
 func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) {
-    email := strings.ToLower(strings.TrimSpace(req.Email))
-    role := strings.TrimSpace(req.Role)
-    if role == "" {
-        role = "member"
-    }
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	role := strings.TrimSpace(req.Role)
+	if role == "" {
+		role = "member"
+	}
 
-    var invite *models.WorkspaceInvitation
-    
-    err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-        existingUser, err := s.authRepository.FindByEmail(ctx, email)
-        
-        if err == nil && existingUser != nil {
-            // SCENARIO A: User already exists! Check if they are already a member first.
+	var invite *models.WorkspaceInvitation
+	var rawTokenForEmail string // Needed to send the unhashed token in the email
+
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		existingUser, err := s.authRepository.FindByEmail(ctx, email)
+
+		if err == nil && existingUser != nil {
+			// SCENARIO A: User already exists! Check membership.
 			isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx, workspaceID, existingUser.ID)
-            if err != nil {
-                return apperr.Internal(err, "failed to check existing workspace membership")
-            }
+			if err != nil {
+				return apperr.Internal(err, "failed to check existing workspace membership")
+			}
 
-            if !isMember {
-                // Directly add them as a workspace member if not already joined
-                membership := &models.WorkspaceMember{
-                    WorkspaceID: workspaceID,
-                    UserID:      existingUser.ID,
-                    Role:        role,
-                    JoinedAt:    time.Now(),
-                }
-                
-                if err := s.workspaceRepository.AddMember(ctx, tx, membership); err != nil {
-                    return apperr.Internal(err, "Failed to add existing user to workspace")
-                }
-            }
-            
-            // Return nil for invitation because no pending invite record was created
-            invite = nil
-            return nil
-        }
+			if !isMember {
+				membership := &models.WorkspaceMember{
+					WorkspaceID: workspaceID,
+					UserID:      existingUser.ID,
+					Role:        role,
+					JoinedAt:    time.Now(),
+				}
+				
+				if err := s.workspaceRepository.AddMember(ctx, tx, membership); err != nil {
+					return apperr.Internal(err, "failed to add existing user to workspace")
+				}
+			}
 
-        // SCENARIO B: User does NOT exist yet. Proceed with the pending invitation token flow.
-        invite = &models.WorkspaceInvitation{
-            ID:          uuid.New(),
-            WorkspaceID: workspaceID,
-            Email:       email,
-            Role:        role,
-            InvitedByID: inviterID,
-            Token:       generateSecureToken(),
-            Status:      models.InvitePending,
-            ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
-        }
+			// OPTIONAL BEST PRACTICE: Even for existing users, if they weren't a member, 
+			// flag that we want to send them a notification email below.
+			return nil
+		}
 
-        if err := s.workspaceRepository.CreateInvitation(ctx, tx, invite); err != nil {
-            return apperr.Internal(err, "failed to create workspace invitation")
-        }
+		// SCENARIO B: User does NOT exist yet. Create pending invitation token.
+		rawTokenForEmail = generateSecureToken()
+		tokenHash := apputil.HashToken(rawTokenForEmail)
 
-        return nil
-    })
+		invite = &models.WorkspaceInvitation{
+			ID:          uuid.New(),
+			WorkspaceID: workspaceID,
+			Email:       email,
+			Role:        role,
+			InvitedByID: inviterID,
+			Token:       tokenHash, 
+			Status:      models.InvitePending,
+			ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
+		}
 
-    if err != nil {
-        return nil, err
-    }
+		if err := s.workspaceRepository.CreateInvitation(ctx, tx, invite); err != nil {
+			return apperr.Internal(err, "failed to create workspace invitation")
+		}
 
-    // If Scenario B was triggered (invite is not nil), dispatch the email asynchronously
-    if invite != nil {
-        go func() {
-            workspaceName, err := s.workspaceRepository.GetWorkspaceName(context.Background(), workspaceID)
-            if err != nil {
-                // Fallback or log error
-                workspaceName = "Synapse Workspace"
-            }
-            _ = SendWorkspaceInviteEmail(invite.Email, workspaceName, invite.Token)
-        }()
-    }
+		return nil
+	})
 
-    return invite, nil
+	if err != nil {
+		return nil, err
+	}
+
+	// Dispatch email asynchronously with a safe timeout context
+	workspaceName, err := s.workspaceRepository.GetWorkspaceName(context.Background(), workspaceID)
+	if err != nil {
+		workspaceName = "Synapse Workspace"
+	}
+
+	if invite != nil {
+		// New user flow: Send registration invite link using the RAW token
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = SendWorkspaceInviteEmail(bgCtx, invite.Email, workspaceName, rawTokenForEmail)
+		}()
+	} else {
+		// Existing user flow: Send direct notification email that they were added
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			_ = SendWorkspaceAddedEmail(bgCtx, email, workspaceName) // Optional: create this helper to notify existing users
+		}()
+	}
+
+	return invite, nil
 }
 func (s *workspaceService) AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
