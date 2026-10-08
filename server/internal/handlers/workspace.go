@@ -105,6 +105,22 @@ func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
 }
 
 
+func (h *WorkspaceHandler) HandleVerifyInvitation(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		dto.RespondError(c, apperr.BadRequest("MISSING_TOKEN", "Missing invitation token"))
+		return
+	}
+
+	details, err := h.srv.VerifyInvitation(c.Request.Context(), token)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
+
+	dto.RespondSuccess(c, 200, "Invitation verified successfully", details)
+}
+
 func (h *WorkspaceHandler) HandleAcceptInvitation(c *gin.Context) {
     token := c.Param("token")
     if token == "" {
