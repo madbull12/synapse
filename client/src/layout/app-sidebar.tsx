@@ -50,82 +50,86 @@ export function AppSidebar({ workspaces }: Props) {
           <WorkspaceRail />
         </div>
 
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
-          <SidebarHeader className="p-2">
-            {data && <WorkspaceDropdown workspaceById={data.data} />}
-          </SidebarHeader>
+        {data && (
+          <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
+            <SidebarHeader className="p-2">
+              <WorkspaceDropdown workspaceById={data.data} />
+            </SidebarHeader>
 
-          <Separator className="opacity-60" />
+            <Separator className="opacity-60" />
 
-          <SidebarContent className="gap-y-2 px-2 overflow-y-auto">
-            {/* Channels Group */}
-            <SidebarGroup className="p-0">
-              <Collapsible
-                open={isChannelCollapsed}
-                onOpenChange={setIsChannelCollapsed}
-              >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-muted/40 cursor-pointer group transition-colors">
-                    <div className="flex items-center gap-x-2">
-                      <ChevronDown
-                        className={cn(
-                          "size-3.5 text-muted-foreground transition-transform duration-200",
-                          !isChannelCollapsed && "-rotate-90",
-                        )}
-                      />
-                      <SidebarGroupLabel className="tracking-wider uppercase font-bold text-xs text-muted-foreground select-none h-auto p-0">
-                        Channels
-                      </SidebarGroupLabel>
+            <SidebarContent className="gap-y-2 px-2 overflow-y-auto">
+              {/* Channels Group */}
+              <SidebarGroup className="p-0">
+                <Collapsible
+                  open={isChannelCollapsed}
+                  onOpenChange={setIsChannelCollapsed}
+                >
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-muted/40 cursor-pointer group transition-colors">
+                      <div className="flex items-center gap-x-2">
+                        <ChevronDown
+                          className={cn(
+                            "size-3.5 text-muted-foreground transition-transform duration-200",
+                            !isChannelCollapsed && "-rotate-90",
+                          )}
+                        />
+                        <SidebarGroupLabel className="tracking-wider uppercase font-bold text-xs text-muted-foreground select-none h-auto p-0">
+                          Channels
+                        </SidebarGroupLabel>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <CreateChannelModal />
+                      </div>
                     </div>
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <CreateChannelModal />
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
-                <SidebarGroupContent>
-                  <CollapsibleContent>
-                    <Suspense fallback={<ChannelListSkeleton />}>
-                      <ChannelList />
-                    </Suspense>
-                  </CollapsibleContent>
-                </SidebarGroupContent>
-              </Collapsible>
-            </SidebarGroup>
+                  </CollapsibleTrigger>
+                  <SidebarGroupContent>
+                    <CollapsibleContent>
+                      <Suspense fallback={<ChannelListSkeleton />}>
+                        <ChannelList />
+                      </Suspense>
+                    </CollapsibleContent>
+                  </SidebarGroupContent>
+                </Collapsible>
+              </SidebarGroup>
 
-            {/* Direct Messages Group */}
-            <SidebarGroup className="p-0">
-              <Collapsible
-                open={isDirectMessageCollapsed}
-                onOpenChange={setIsDirectMessageCollapsed}
-              >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-muted/40 cursor-pointer group transition-colors">
-                    <div className="flex items-center gap-x-2">
-                      <ChevronDown
-                        className={cn(
-                          "size-3.5 text-muted-foreground transition-transform duration-200",
-                          !isDirectMessageCollapsed && "-rotate-90",
-                        )}
-                      />
-                      <SidebarGroupLabel className="tracking-wider uppercase font-bold text-xs text-muted-foreground select-none h-auto p-0">
-                        Direct Messages
-                      </SidebarGroupLabel>
+              {/* Direct Messages Group */}
+              <SidebarGroup className="p-0">
+                <Collapsible
+                  open={isDirectMessageCollapsed}
+                  onOpenChange={setIsDirectMessageCollapsed}
+                >
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between w-full p-2 rounded-md hover:bg-muted/40 cursor-pointer group transition-colors">
+                      <div className="flex items-center gap-x-2">
+                        <ChevronDown
+                          className={cn(
+                            "size-3.5 text-muted-foreground transition-transform duration-200",
+                            !isDirectMessageCollapsed && "-rotate-90",
+                          )}
+                        />
+                        <SidebarGroupLabel className="tracking-wider uppercase font-bold text-xs text-muted-foreground select-none h-auto p-0">
+                          Direct Messages
+                        </SidebarGroupLabel>
+                      </div>
                     </div>
-                  </div>
-                </CollapsibleTrigger>
-                <SidebarGroupContent>
-                  <CollapsibleContent>
-                    <DirectMessageList />
-                  </CollapsibleContent>
-                </SidebarGroupContent>
-              </Collapsible>
-            </SidebarGroup>
-          </SidebarContent>
+                  </CollapsibleTrigger>
+                  <SidebarGroupContent>
+                    <CollapsibleContent>
+                      <DirectMessageList />
+                    </CollapsibleContent>
+                  </SidebarGroupContent>
+                </Collapsible>
+              </SidebarGroup>
+            </SidebarContent>
 
-          <SidebarFooter>
-            <UserDropdown />
-          </SidebarFooter>
-        </div>
+            <SidebarFooter>
+              <UserDropdown />
+            </SidebarFooter>
+          </div>
+        )}
+
+
       </div>
     </Sidebar>
   );

@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { fetchUserWorkspaces } from "@/features/user/service/server";
 import { AppSidebar } from "@/layout/app-sidebar";
 import {
@@ -26,7 +26,7 @@ export default async function Layout({
       <SidebarProvider
         style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
       >
-        <div className="flex h-screen w-screen overflow-hidden bg-background">
+        <div className="flex h-screen w-screen overflow-hidde-background">
           <AppSidebar workspaces={workspaces} />
 
           <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">

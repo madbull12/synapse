@@ -51,7 +51,6 @@ export default function AcceptInvitePage() {
   const [passwordConfirmationVisible, setPasswordConfirmationVisible] =
     useState(false);
 
-  // React Query hooks for token verification and acceptance
   const {
     data: verifyResponse,
     isLoading: loadingInvite,
@@ -103,7 +102,6 @@ export default function AcceptInvitePage() {
     );
   }
 
-  // 2. Error / Invalid Token State
   if (verifyError || !inviteData) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -120,7 +118,6 @@ export default function AcceptInvitePage() {
     );
   }
 
-  // 3. Valid Invitation State (Dynamic Branching)
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm rounded-sm border p-6 space-y-6 shadow-sm bg-card">

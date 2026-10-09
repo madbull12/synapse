@@ -42,7 +42,7 @@ func Run(cfg *Config) {
 	channelHandler := handlers.NewChannelHandler(channelSrv)
 
 	workspaceRepo := repository.NewWorkspaceRepository(db)
-	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo,authRepo, workspaceMemberRepo)
+	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo, authRepo, workspaceMemberRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
 	r := gin.Default()
@@ -80,7 +80,7 @@ func initDB(dsn string) *gorm.DB {
 	log.Println("Database connection pool configured successfully.")
 
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{},&models.WorkspaceInvitation{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}, &models.WorkspaceInvitation{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -89,7 +89,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3003")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")

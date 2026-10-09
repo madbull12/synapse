@@ -299,13 +299,12 @@ func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.
 	}
 
 	var invite *models.WorkspaceInvitation
-	var rawTokenForEmail string // Needed to send the unhashed token in the email
+	var rawTokenForEmail string
 
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		existingUser, err := s.authRepository.FindByEmail(ctx, email)
 
 		if err == nil && existingUser != nil {
-			// SCENARIO A: User already exists! Check membership.
 			isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx, workspaceID, existingUser.ID)
 			if err != nil {
 				return apperr.Internal(err, "failed to check existing workspace membership")
@@ -324,12 +323,9 @@ func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.
 				}
 			}
 
-			// OPTIONAL BEST PRACTICE: Even for existing users, if they weren't a member,
-			// flag that we want to send them a notification email below.
 			return nil
 		}
 
-		// SCENARIO B: User does NOT exist yet. Create pending invitation token.
 		rawTokenForEmail = generateSecureToken()
 		tokenHash := apputil.HashToken(rawTokenForEmail)
 
@@ -355,25 +351,22 @@ func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.
 		return nil, err
 	}
 
-	// Dispatch email asynchronously with a safe timeout context
 	workspaceName, err := s.workspaceRepository.GetWorkspaceName(context.Background(), workspaceID)
 	if err != nil {
 		workspaceName = "Synapse Workspace"
 	}
 
 	if invite != nil {
-		// New user flow: Send registration invite link using the RAW token
 		go func() {
 			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 			_ = SendWorkspaceInviteEmail(bgCtx, invite.Email, workspaceName, rawTokenForEmail)
 		}()
 	} else {
-		// Existing user flow: Send direct notification email that they were added
 		go func() {
 			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_ = SendWorkspaceAddedEmail(bgCtx, email, workspaceName) // Optional: create this helper to notify existing users
+			_ = SendWorkspaceAddedEmail(bgCtx, email, workspaceName)
 		}()
 	}
 
