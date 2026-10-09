@@ -75,15 +75,17 @@ func NewWorkspaceService(
 	}
 }
 
-func generateSecureToken() string {
+
+func generateSecureToken() (string, error) {
 	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(fmt.Sprintf("failed to generate secure token: %v", err))
+
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate invitation token: %w", err)
 	}
 
-	return base64.RawURLEncoding.EncodeToString(b)
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
+
 
 func SendWorkspaceInviteEmail(ctx context.Context, toEmail, workspaceName, inviteToken string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
@@ -177,34 +179,46 @@ func SendWorkspaceAddedEmail(ctx context.Context, toEmail, workspaceName string)
 }
 
 func (s *workspaceService) VerifyInvitation(ctx context.Context, rawToken string) (*InvitationDetails, error) {
-	tokenHash := apputil.HashToken(rawToken)
+    rawToken = strings.TrimSpace(rawToken)
+    if rawToken == "" {
+        return nil, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required.")
+    }
 
-	invite, err := s.workspaceRepository.FindInvitationByToken(ctx, nil, tokenHash)
-	if err != nil {
-		return nil, apperr.BadRequest("INVALID_INVITATION", "This invitation link is invalid.")
-	}
+    tokenHash := apputil.HashToken(rawToken)
 
-	if time.Now().After(invite.ExpiresAt) {
-		return nil, apperr.BadRequest("EXPIRED_INVITATION", "This invitation link has expired.")
-	}
+    invite, err := s.workspaceRepository.FindInvitationByToken(ctx, nil, tokenHash)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, apperr.BadRequest("INVALID_INVITATION", "This invitation link is invalid or does not exist.")
+        }
+        return nil, apperr.Internal(err, "failed to query invitation by token")
+    }
 
-	if invite.Status != models.InvitePending {
-		return nil, apperr.BadRequest("ALREADY_ACCEPTED", "This invitation has already been used.")
-	}
+    if time.Now().After(invite.ExpiresAt) {
+        return nil, apperr.BadRequest("EXPIRED_INVITATION", "This invitation link has expired.")
+    }
 
-	workspaceName, err := s.workspaceRepository.GetWorkspaceName(ctx, invite.WorkspaceID)
-	if err != nil {
-		workspaceName = "Synapse Workspace"
-	}
+    if invite.Status != models.InvitePending {
+        return nil, apperr.BadRequest("INVITATION_PROCESSED", "This invitation has already been used.")
+    }
 
-	existingUser, err := s.authRepository.FindByEmail(ctx, invite.Email)
-	isExistingUser := (err == nil && existingUser != nil)
+    workspaceName, err := s.workspaceRepository.GetWorkspaceName(ctx, invite.WorkspaceID)
+    if err != nil {
+        workspaceName = "Synapse Workspace"
+    }
 
-	return &InvitationDetails{
-		Email:          invite.Email,
-		WorkspaceName:  workspaceName,
-		IsExistingUser: isExistingUser,
-	}, nil
+    existingUser, err := s.authRepository.FindByEmail(ctx, invite.Email)
+    if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, apperr.Internal(err, "failed to check existing user account")
+    }
+
+    isExistingUser := (err == nil && existingUser != nil)
+
+    return &InvitationDetails{
+        Email:          invite.Email,
+        WorkspaceName:  workspaceName,
+        IsExistingUser: isExistingUser,
+    }, nil
 }
 
 func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error) {
@@ -291,57 +305,83 @@ func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID
 	return nil
 }
 
-func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error) {
+
+func (s *workspaceService) SendInvitation(
+	ctx context.Context,
+	workspaceID uuid.UUID,
+	inviterID uuid.UUID,
+	req *SendInvitationRequest,
+) (*models.WorkspaceInvitation, error) {
+	if req == nil {
+		return nil, apperr.BadRequest(
+			"INVALID_REQUEST",
+			"Invitation request is required",
+		)
+	}
+
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 	role := strings.TrimSpace(req.Role)
+
+	if email == "" {
+		return nil, apperr.BadRequest(
+			"INVALID_EMAIL",
+			"Email is required",
+		)
+	}
+
 	if role == "" {
 		role = "member"
 	}
 
-	var invite *models.WorkspaceInvitation
-	var rawTokenForEmail string
+	if role != "member" && role != "admin" {
+		return nil, apperr.BadRequest(
+			"INVALID_ROLE",
+			"Invalid workspace role",
+		)
+	}
 
-	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		existingUser, err := s.authRepository.FindByEmail(ctx, email)
+	rawToken, err := generateSecureToken()
+	if err != nil {
+		return nil, apperr.Internal(
+			err,
+			"failed to generate invitation token",
+		)
+	}
 
-		if err == nil && existingUser != nil {
-			isMember, err := s.workspaceMemberRepository.IsUserInWorkspace(ctx, workspaceID, existingUser.ID)
-			if err != nil {
-				return apperr.Internal(err, "failed to check existing workspace membership")
-			}
+	tokenHash := apputil.HashToken(rawToken)
 
-			if !isMember {
-				membership := &models.WorkspaceMember{
-					WorkspaceID: workspaceID,
-					UserID:      existingUser.ID,
-					Role:        role,
-					JoinedAt:    time.Now(),
-				}
+	invite := &models.WorkspaceInvitation{
+		ID:          uuid.New(),
+		WorkspaceID: workspaceID,
+		Email:       email,
+		Role:        role,
+		InvitedByID: inviterID,
+		Token:       tokenHash,
+		Status:      models.InvitePending,
+		ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
+	}
 
-				if err := s.workspaceRepository.AddMember(ctx, tx, membership); err != nil {
-					return apperr.Internal(err, "failed to add existing user to workspace")
-				}
-			}
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		
+		_, lookupErr := s.authRepository.FindByEmail(ctx, email)
 
-			return nil
+		if lookupErr != nil &&
+			!errors.Is(lookupErr, gorm.ErrRecordNotFound) {
+			return apperr.Internal(
+				lookupErr,
+				"failed to look up invitation recipient",
+			)
 		}
 
-		rawTokenForEmail = generateSecureToken()
-		tokenHash := apputil.HashToken(rawTokenForEmail)
 
-		invite = &models.WorkspaceInvitation{
-			ID:          uuid.New(),
-			WorkspaceID: workspaceID,
-			Email:       email,
-			Role:        role,
-			InvitedByID: inviterID,
-			Token:       tokenHash,
-			Status:      models.InvitePending,
-			ExpiresAt:   time.Now().Add(7 * 24 * time.Hour),
-		}
 
-		if err := s.workspaceRepository.CreateInvitation(ctx, tx, invite); err != nil {
-			return apperr.Internal(err, "failed to create workspace invitation")
+		if err := s.workspaceRepository.CreateInvitation(
+			ctx, tx, invite,
+		); err != nil {
+			return apperr.Internal(
+				err,
+				"failed to create workspace invitation",
+			)
 		}
 
 		return nil
@@ -351,30 +391,46 @@ func (s *workspaceService) SendInvitation(ctx context.Context, workspaceID uuid.
 		return nil, err
 	}
 
-	workspaceName, err := s.workspaceRepository.GetWorkspaceName(context.Background(), workspaceID)
-	if err != nil {
-		workspaceName = "Synapse Workspace"
-	}
+	invitationID := invite.ID
+	recipientEmail := invite.Email
+	workspaceIDForEmail := invite.WorkspaceID
+	tokenForEmail := rawToken
 
-	if invite != nil {
-		go func() {
-			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			_ = SendWorkspaceInviteEmail(bgCtx, invite.Email, workspaceName, rawTokenForEmail)
-		}()
-	} else {
-		go func() {
-			bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			_ = SendWorkspaceAddedEmail(bgCtx, email, workspaceName)
-		}()
-	}
+	go func() {
+		bgCtx, cancel := context.WithTimeout(
+			context.Background(),
+			10*time.Second,
+		)
+		defer cancel()
+
+		workspaceName, err := s.workspaceRepository.GetWorkspaceName(
+			bgCtx, workspaceIDForEmail,
+		)
+		if err != nil {
+			// Log the error using projects 
+			workspaceName = "Synapse Workspace"
+		}
+
+		if err := SendWorkspaceInviteEmail(
+			bgCtx,
+			recipientEmail,
+			workspaceName,
+			tokenForEmail,
+		); err != nil {
+			// Log invitationID and the error.
+			// Never log the raw token.
+			_ = invitationID
+		}
+	}()
 
 	return invite, nil
 }
+
+
 func (s *workspaceService) AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		invite, err := s.workspaceRepository.FindInvitationByToken(ctx, tx, token)
+		tokenHash := apputil.HashToken(token)
+		invite, err := s.workspaceRepository.FindInvitationByToken(ctx, tx, tokenHash)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return apperr.NotFound("INVITATION_NOT_FOUND", "The invitation token is invalid or does not exist.")
