@@ -1,8 +1,10 @@
-import { privateApi } from "@/lib/api";
+import { privateApi, publicApi } from "@/lib/api";
 import {
+  AcceptInvitationDTO,
   AddMemberToWorkspaceDTO,
   CreateWorkspaceDTO,
   SendInvitationDTO,
+  VerifyInvitationResponse,
   WorkspaceByIdResponse,
   WorkspaceResponse,
 } from "@/features/workspace/types/api";
@@ -13,7 +15,21 @@ export const workspaceService = {
     const res = await privateApi.get<WorkspaceResponse>(`/workspaces`);
     return res.data;
   },
+  async verifyInvitation(token: string): Promise<VerifyInvitationResponse> {
+    const res = await publicApi.get<VerifyInvitationResponse>(
+      `/workspaces/invitations/verify`,
+      { params: { token } }
+    );
+    return res.data;
+  },
 
+  async acceptInvitation(data: AcceptInvitationDTO): Promise<APIResponse<string>> {
+    const res = await privateApi.post<APIResponse<string>>(
+      `/workspaces/invitations/${data.token}/accept`,
+      { name: data.name, password: data.password }
+    );
+    return res.data;
+  },
   async createWorkspace(data: CreateWorkspaceDTO) {
     const res = await privateApi.post<APIResponse<string>>("/workspaces", data);
     return res.data;
@@ -46,10 +62,5 @@ export const workspaceService = {
     return res.data;
   },
 
-  async acceptInvitation(invitationId: string) {
-    const res = await privateApi.post<APIResponse<string>>(
-      `/invitations/${invitationId}/accept`,
-    );
-    return res.data;
-  },
+
 };

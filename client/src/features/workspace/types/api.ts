@@ -6,7 +6,21 @@ export type CreateWorkspaceDTO = {
   logoURL?: string;
   slug: string;
 };
+export interface InvitationDetails {
+  email: string;
+  workspace_name: string;
+  role: string;
+  is_existing_user: boolean;
+}
 
+export type VerifyInvitationResponse = APIResponse<InvitationDetails>;
+
+
+export interface AcceptInvitationDTO {
+  token: string;
+  name?: string;
+  password?: string;
+}
 export interface SendInvitationDTO {
   email: string;
   role: string;

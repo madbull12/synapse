@@ -9,6 +9,7 @@ import (
 	"os"
 	"server/internal/apperr"
 	"server/internal/apputil"
+	"server/internal/dto"
 	"server/internal/models"
 	"server/internal/repository"
 	"strings"
@@ -19,36 +20,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type InvitationDetails struct {
-	Email          string
-	WorkspaceName  string
-	IsExistingUser bool
-}
-
-type CreateWorkspaceRequest struct {
-	Name    string `json:"name" binding:"required,min=2,max=100"`
-	Slug    string `json:"slug" binding:"required,min=2,max=100"`
-	LogoURL string `json:"logo_url"`
-}
-
-type AddWorkspaceMemberRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	Role  string `json:"role"` // e.g., "member", "admin"
-}
-
-type SendInvitationRequest struct {
-	Email string `json:"email" binding:"required,email"`
-	Role  string `json:"role" binding:"omitempty,oneof=member admin"`
-}
-
 type WorkspaceService interface {
-	CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error)
+	CreateWorkspace(ctx context.Context, userID uuid.UUID, req *dto.CreateWorkspaceRequest) (*models.Workspace, error)
 	GetWorkspacesForUser(ctx context.Context, userID uuid.UUID) ([]*models.Workspace, error)
 	GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
-	AddMemberToWorkspace(ctx context.Context, workspace uuid.UUID, req *AddWorkspaceMemberRequest) error
-	SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *SendInvitationRequest) (*models.WorkspaceInvitation, error)
+	AddMemberToWorkspace(ctx context.Context, workspace uuid.UUID, req *dto.AddWorkspaceMemberRequest) error
+	SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *dto.SendInvitationRequest) (*models.WorkspaceInvitation, error)
 	AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error
-	VerifyInvitation(ctx context.Context, rawToken string) (*InvitationDetails, error)
+	VerifyInvitation(ctx context.Context, rawToken string) (*dto.InvitationDetails, error)
 }
 
 type workspaceService struct {
@@ -75,7 +54,6 @@ func NewWorkspaceService(
 	}
 }
 
-
 func generateSecureToken() (string, error) {
 	b := make([]byte, 32)
 
@@ -85,7 +63,6 @@ func generateSecureToken() (string, error) {
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
-
 
 func SendWorkspaceInviteEmail(ctx context.Context, toEmail, workspaceName, inviteToken string) error {
 	apiKey := os.Getenv("RESEND_API_KEY")
@@ -178,50 +155,51 @@ func SendWorkspaceAddedEmail(ctx context.Context, toEmail, workspaceName string)
 	return nil
 }
 
-func (s *workspaceService) VerifyInvitation(ctx context.Context, rawToken string) (*InvitationDetails, error) {
-    rawToken = strings.TrimSpace(rawToken)
-    if rawToken == "" {
-        return nil, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required.")
-    }
+func (s *workspaceService) VerifyInvitation(ctx context.Context, rawToken string) (*dto.InvitationDetails, error) {
+	rawToken = strings.TrimSpace(rawToken)
+	if rawToken == "" {
+		return nil, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required.")
+	}
 
-    tokenHash := apputil.HashToken(rawToken)
+	tokenHash := apputil.HashToken(rawToken)
 
-    invite, err := s.workspaceRepository.FindInvitationByToken(ctx, nil, tokenHash)
-    if err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return nil, apperr.BadRequest("INVALID_INVITATION", "This invitation link is invalid or does not exist.")
-        }
-        return nil, apperr.Internal(err, "failed to query invitation by token")
-    }
+	invite, err := s.workspaceRepository.FindInvitationByToken(ctx, nil, tokenHash)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperr.BadRequest("INVALID_INVITATION", "This invitation link is invalid or does not exist.")
+		}
+		return nil, apperr.Internal(err, "failed to query invitation by token")
+	}
 
-    if time.Now().After(invite.ExpiresAt) {
-        return nil, apperr.BadRequest("EXPIRED_INVITATION", "This invitation link has expired.")
-    }
+	if time.Now().After(invite.ExpiresAt) {
+		return nil, apperr.BadRequest("EXPIRED_INVITATION", "This invitation link has expired.")
+	}
 
-    if invite.Status != models.InvitePending {
-        return nil, apperr.BadRequest("INVITATION_PROCESSED", "This invitation has already been used.")
-    }
+	if invite.Status != models.InvitePending {
+		return nil, apperr.BadRequest("INVITATION_PROCESSED", "This invitation has already been used.")
+	}
 
-    workspaceName, err := s.workspaceRepository.GetWorkspaceName(ctx, invite.WorkspaceID)
-    if err != nil {
-        workspaceName = "Synapse Workspace"
-    }
+	workspaceName, err := s.workspaceRepository.GetWorkspaceName(ctx, invite.WorkspaceID)
+	if err != nil {
+		workspaceName = "Synapse Workspace"
+	}
 
-    existingUser, err := s.authRepository.FindByEmail(ctx, invite.Email)
-    if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-        return nil, apperr.Internal(err, "failed to check existing user account")
-    }
+	existingUser, err := s.authRepository.FindByEmail(ctx, invite.Email)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, apperr.Internal(err, "failed to check existing user account")
+	}
 
-    isExistingUser := (err == nil && existingUser != nil)
+	isExistingUser := (err == nil && existingUser != nil)
 
-    return &InvitationDetails{
-        Email:          invite.Email,
-        WorkspaceName:  workspaceName,
-        IsExistingUser: isExistingUser,
-    }, nil
+	return &dto.InvitationDetails{
+		Email:          invite.Email,
+		WorkspaceName:  workspaceName,
+		IsExistingUser: isExistingUser,
+		Role:           invite.Role,
+	}, nil
 }
 
-func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID, req *CreateWorkspaceRequest) (*models.Workspace, error) {
+func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID, req *dto.CreateWorkspaceRequest) (*models.Workspace, error) {
 	slug := strings.ToLower(strings.TrimSpace(req.Slug))
 	slug = strings.ReplaceAll(slug, " ", "-")
 
@@ -280,7 +258,7 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, userID uuid.UUID
 	return workspace, nil
 
 }
-func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID uuid.UUID, req *AddWorkspaceMemberRequest) error {
+func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID uuid.UUID, req *dto.AddWorkspaceMemberRequest) error {
 	user, err := s.authRepository.FindByEmail(ctx, req.Email)
 	if err != nil {
 		return err
@@ -305,12 +283,11 @@ func (s *workspaceService) AddMemberToWorkspace(ctx context.Context, workspaceID
 	return nil
 }
 
-
 func (s *workspaceService) SendInvitation(
 	ctx context.Context,
 	workspaceID uuid.UUID,
 	inviterID uuid.UUID,
-	req *SendInvitationRequest,
+	req *dto.SendInvitationRequest,
 ) (*models.WorkspaceInvitation, error) {
 	if req == nil {
 		return nil, apperr.BadRequest(
@@ -362,7 +339,7 @@ func (s *workspaceService) SendInvitation(
 	}
 
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		
+
 		_, lookupErr := s.authRepository.FindByEmail(ctx, email)
 
 		if lookupErr != nil &&
@@ -372,8 +349,6 @@ func (s *workspaceService) SendInvitation(
 				"failed to look up invitation recipient",
 			)
 		}
-
-
 
 		if err := s.workspaceRepository.CreateInvitation(
 			ctx, tx, invite,
@@ -407,7 +382,7 @@ func (s *workspaceService) SendInvitation(
 			bgCtx, workspaceIDForEmail,
 		)
 		if err != nil {
-			// Log the error using projects 
+			// Log the error using projects
 			workspaceName = "Synapse Workspace"
 		}
 
@@ -425,7 +400,6 @@ func (s *workspaceService) SendInvitation(
 
 	return invite, nil
 }
-
 
 func (s *workspaceService) AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error {
 	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

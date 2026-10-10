@@ -25,7 +25,7 @@ func (h *WorkspaceHandler) HandleCreateWorkspace(c *gin.Context) {
 		dto.RespondError(c, err)
 		return
 	}
-	var req service.CreateWorkspaceRequest
+	var req dto.CreateWorkspaceRequest
 	if !apputil.BindAndValidate(c, &req) {
 		return
 	}
@@ -40,31 +40,30 @@ func (h *WorkspaceHandler) HandleCreateWorkspace(c *gin.Context) {
 }
 
 func (h *WorkspaceHandler) HandleAddMember(c *gin.Context) {
-    workspaceID, err := uuid.Parse(c.Param("workspaceId"))
-    if err != nil {
-        dto.RespondError(c, apperr.BadRequest("INVALID_ID","Invalid workspace ID format"))
-        return
-    }
+	workspaceID, err := uuid.Parse(c.Param("workspaceId"))
+	if err != nil {
+		dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid workspace ID format"))
+		return
+	}
 
-    var req service.AddWorkspaceMemberRequest
-    if !apputil.BindAndValidate(c, &req) {
-        return
-    }
+	var req dto.AddWorkspaceMemberRequest
+	if !apputil.BindAndValidate(c, &req) {
+		return
+	}
 
-    err = h.srv.AddMemberToWorkspace(c.Request.Context(), workspaceID, &req)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	err = h.srv.AddMemberToWorkspace(c.Request.Context(), workspaceID, &req)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    dto.RespondSuccess(c, 200, "Member added to workspace successfully", nil)
+	dto.RespondSuccess(c, 200, "Member added to workspace successfully", nil)
 }
-
 
 func (h *WorkspaceHandler) HandleSendInvitation(c *gin.Context) {
 	workspaceID, err := uuid.Parse(c.Param("workspaceId"))
 	if err != nil {
-		dto.RespondError(c, apperr.BadRequest("INVALID_ID","Invalid workspace ID format"))
+		dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid workspace ID format"))
 		return
 	}
 
@@ -74,7 +73,7 @@ func (h *WorkspaceHandler) HandleSendInvitation(c *gin.Context) {
 		return
 	}
 
-	var req service.SendInvitationRequest
+	var req dto.SendInvitationRequest
 	if !apputil.BindAndValidate(c, &req) {
 		return
 	}
@@ -104,7 +103,6 @@ func (h *WorkspaceHandler) HandleGetUserWorkspaces(c *gin.Context) {
 	dto.RespondSuccess(c, http.StatusOK, "Workspaces retrieved successfully", workspaces)
 }
 
-
 func (h *WorkspaceHandler) HandleVerifyInvitation(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
@@ -122,25 +120,25 @@ func (h *WorkspaceHandler) HandleVerifyInvitation(c *gin.Context) {
 }
 
 func (h *WorkspaceHandler) HandleAcceptInvitation(c *gin.Context) {
-    token := c.Param("token")
-    if token == "" {
-        dto.RespondError(c, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required"))
-        return
-    }
+	token := c.Param("token")
+	if token == "" {
+		dto.RespondError(c, apperr.BadRequest("INVALID_TOKEN", "Invitation token is required"))
+		return
+	}
 
-    userID, err := apputil.GetUserID(c)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	userID, err := apputil.GetUserID(c)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    err = h.srv.AcceptInvitationByToken(c.Request.Context(), token, userID)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	err = h.srv.AcceptInvitationByToken(c.Request.Context(), token, userID)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    dto.RespondSuccess(c, 200, "Invitation accepted successfully", nil)
+	dto.RespondSuccess(c, 200, "Invitation accepted successfully", nil)
 }
 func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
 

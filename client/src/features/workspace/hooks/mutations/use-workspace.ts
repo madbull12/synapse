@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { workspaceService } from "@/features/workspace/service";
 import { APIError, APIResponse } from "@/types";
-import { Axios, AxiosError } from "axios";
+import { AxiosError } from "axios";
 import {
+  AcceptInvitationDTO,
   AddMemberToWorkspaceDTO,
   CreateWorkspaceDTO,
   SendInvitationDTO,
@@ -52,18 +53,19 @@ export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.userId);
 
-  return useMutation<APIResponse<string>, AxiosError<APIError>, string>({
-    mutationFn: (invitationId: string) =>
-      workspaceService.acceptInvitation(invitationId),
+  return useMutation<APIResponse<string>, AxiosError<APIError>, AcceptInvitationDTO>({
+    mutationFn: (data: AcceptInvitationDTO) =>
+      workspaceService.acceptInvitation(data),
     onSuccess: (data) => {
-      toast.success(data?.message || "Successfully joined workspace!");
+      toast.success(data.message || "Successfully joined workspace!");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspaces", userId] });
+      if (userId) {
+        queryClient.invalidateQueries({ queryKey: ["workspaces", userId] });
+      }
     },
   });
 };
-
 export const useSendWorkspaceInvitation = (workspaceId: string) => {
   const queryClient = useQueryClient();
 

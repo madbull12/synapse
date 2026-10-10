@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,9 @@ import {
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import {
   useVerifyInvitation,
-  useAcceptInvitation,
-} from "@/hooks/use-invitation";
+} from "@/features/workspace/hooks/queries/use-workspace";
+import { useAuthStore } from "@/features/auth/store/use-auth-store";
+import { useAcceptInvitation } from "@/features/workspace/hooks/mutations/use-workspace";
 
 const acceptInviteFormSchema = z
   .object({
@@ -42,10 +44,12 @@ const acceptInviteFormSchema = z
     path: ["passwordConfirmation"],
   });
 
-export default function AcceptInvitePage() {
+function AcceptInviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const token = searchParams.get("token");
+  const token = searchParams.get("token") || "";
+
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [passwordConfirmationVisible, setPasswordConfirmationVisible] =
@@ -56,6 +60,7 @@ export default function AcceptInvitePage() {
     isLoading: loadingInvite,
     error: verifyError,
   } = useVerifyInvitation(token);
+
   const {
     mutate: acceptInvite,
     isPending: actionLoading,
@@ -79,8 +84,7 @@ export default function AcceptInvitePage() {
     acceptInvite(
       {
         token,
-        name: values?.name || "",
-        password: values?.password || "",
+        ...(values ? { name: values.name, password: values.password } : {}),
       },
       {
         onSuccess: () => {
@@ -90,7 +94,6 @@ export default function AcceptInvitePage() {
     );
   };
 
-  // 1. Loading State
   if (loadingInvite) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background">
@@ -105,18 +108,23 @@ export default function AcceptInvitePage() {
   if (verifyError || !inviteData) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm rounded-sm border p-6 text-center space-y-4 shadow-sm">
+        <div className="w-full max-w-sm rounded-sm border p-6 text-center space-y-4 shadow-sm bg-card">
           <h1 className="font-bold text-xl text-destructive">
             Invalid Invitation
           </h1>
           <p className="text-muted-foreground text-sm">
-            {verifyError?.message ||
+            {verifyError?.response?.data?.message ||
+              verifyError?.message ||
               "This invitation link is invalid, expired, or has already been used."}
           </p>
         </div>
       </main>
     );
   }
+
+  const workspaceName = inviteData.workspace_name || inviteData.workspace_name;
+  const isExistingUser =
+    inviteData.is_existing_user
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -125,10 +133,7 @@ export default function AcceptInvitePage() {
           <h1 className="font-bold text-2xl tracking-tight">Join Workspace</h1>
           <p className="text-muted-foreground text-sm">
             You&apos;ve been invited to join{" "}
-            <strong className="text-foreground">
-              {inviteData.workspaceName}
-            </strong>{" "}
-            as{" "}
+            <strong className="text-foreground">{workspaceName}</strong> as{" "}
             <span className="text-foreground font-medium">
               {inviteData.email}
             </span>
@@ -136,21 +141,35 @@ export default function AcceptInvitePage() {
           </p>
         </div>
 
-        {/* Branch A: Existing User (Frictionless 1-click join) */}
-        {inviteData.isExistingUser ? (
+        {isExistingUser ? (
           <div className="space-y-4">
-            <Button
-              loading={actionLoading}
-              className="w-full"
-              onClick={() => handleAccept()}
-            >
-              Accept & Join Workspace
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                loading={actionLoading}
+                className="w-full"
+                onClick={() => handleAccept()}
+              >
+                Accept & Join Workspace
+              </Button>
+            ) : (
+              <div className="space-y-3 text-center">
+                <p className="text-xs text-muted-foreground">
+                  You already have an account. Please log in to accept this invitation.
+                </p>
+                <Button asChild className="w-full">
+                  <Link
+                    href={`/login?redirect=/invitations/accept?token=${encodeURIComponent(
+                      token,
+                    )}`}
+                  >
+                    Log In to Accept
+                  </Link>
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
-          /* Branch B: New User (Customized Registration Form matching your design system) */
           <form
-            id="accept-invite-form"
             className="space-y-4"
             onSubmit={form.handleSubmit((vals) => handleAccept(vals))}
           >
@@ -185,12 +204,15 @@ export default function AcceptInvitePage() {
                       <Button
                         variant="ghost"
                         type="button"
+                        aria-label={
+                          passwordVisible ? "Hide password" : "Show password"
+                        }
                         onClick={() => setPasswordVisible(!passwordVisible)}
                       >
                         {passwordVisible ? (
-                          <EyeIcon className="h-4 w-4" />
-                        ) : (
                           <EyeOffIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4" />
                         )}
                       </Button>
                     </InputGroupAddon>
@@ -221,6 +243,11 @@ export default function AcceptInvitePage() {
                       <Button
                         variant="ghost"
                         type="button"
+                        aria-label={
+                          passwordConfirmationVisible
+                            ? "Hide password confirmation"
+                            : "Show password confirmation"
+                        }
                         onClick={() =>
                           setPasswordConfirmationVisible(
                             !passwordConfirmationVisible,
@@ -228,9 +255,9 @@ export default function AcceptInvitePage() {
                         }
                       >
                         {passwordConfirmationVisible ? (
-                          <EyeIcon className="h-4 w-4" />
-                        ) : (
                           <EyeOffIcon className="h-4 w-4" />
+                        ) : (
+                          <EyeIcon className="h-4 w-4" />
                         )}
                       </Button>
                     </InputGroupAddon>
@@ -242,20 +269,14 @@ export default function AcceptInvitePage() {
               )}
             />
 
-            <Button
-              loading={actionLoading}
-              className="w-full"
-              type="submit"
-              form="accept-invite-form"
-            >
+            <Button loading={actionLoading} className="w-full" type="submit">
               Complete Registration & Join
             </Button>
           </form>
         )}
 
-        {/* Action Error Alert */}
         {actionError && (
-          <div className="p-3 text-sm text-destructive bg-destructive/20 rounded-md border border-destructive">
+          <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-md border border-destructive/20">
             {actionError.response?.data?.message ||
               actionError.message ||
               "Action failed. Please try again."}
@@ -263,5 +284,19 @@ export default function AcceptInvitePage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function AcceptInvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen flex-col items-center justify-center bg-background">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </main>
+      }
+    >
+      <AcceptInviteContent />
+    </Suspense>
   );
 }
