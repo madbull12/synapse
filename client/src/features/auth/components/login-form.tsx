@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import Link from "next/link";
@@ -13,9 +12,10 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { useState } from "react";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { useLogin } from "../hooks/mutations/use-auth";
+import { Suspense, useState } from "react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { useLogin } from "@/features/auth/hooks/mutations/use-auth";
+import { useSearchParams, useRouter } from "next/navigation";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -26,7 +26,12 @@ const formSchema = z.object({
   }),
 });
 
-const Example = () => {
+const LoginFormContent = () => {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const redirectUrl = searchParams.get("redirect") || "/workspace";
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,23 +41,18 @@ const Example = () => {
   });
 
   const { mutate: login, isPending, isError, error } = useLogin();
-
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     login(values, {
-      onError: (error) => {
-        // form.setError("password", {
-        //   type: "manual",
-        //   message:
-        //     error.response?.data?.message || "Login failed. Please try again.",
-        // });
+      onSuccess: () => {
+        router.push(redirectUrl);
       },
     });
   }
 
   return (
-    <div className="w-full max-w-sm border rounded p-4">
+    <div className="w-full max-w-sm border rounded p-4 bg-card shadow-sm">
       <form
         className="space-y-4 z-50 relative"
         id="login-form"
@@ -127,7 +127,7 @@ const Example = () => {
           </div>
         )}
         <p className="text-center text-muted-foreground text-sm">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link className="hover:underline text-primary" href="/auth/register">
             Sign up
           </Link>
@@ -137,4 +137,16 @@ const Example = () => {
   );
 };
 
-export default Example;
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
+  );
+}

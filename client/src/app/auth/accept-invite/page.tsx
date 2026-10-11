@@ -104,7 +104,7 @@ function AcceptInviteContent() {
         },
       );
     } catch (error) {
-      toast.error("Failed to accept invitation. Please try again.");
+      // toast.error("Failed to accept invitation. Please try again.");
     }
   };
 
@@ -172,7 +172,7 @@ function AcceptInviteContent() {
                 </p>
                 <Button asChild className="w-full">
                   <Link
-                    href={`/login?redirect=/invitations/accept?token=${encodeURIComponent(
+                    href={`/auth/login?redirect=/invitations/accept?token=${encodeURIComponent(
                       token,
                     )}`}
                   >
