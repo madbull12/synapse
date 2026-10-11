@@ -15,12 +15,11 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
-import {
-  useVerifyInvitation,
-} from "@/features/workspace/hooks/queries/use-workspace";
+import { useVerifyInvitation } from "@/features/workspace/hooks/queries/use-workspace";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { useAcceptInvitation } from "@/features/workspace/hooks/mutations/use-workspace";
-
+import { useRegister } from "@/features/auth/hooks/mutations/use-auth";
+import { toast } from "sonner";
 const acceptInviteFormSchema = z
   .object({
     name: z.string().min(2, {
@@ -55,6 +54,8 @@ function AcceptInviteContent() {
   const [passwordConfirmationVisible, setPasswordConfirmationVisible] =
     useState(false);
 
+  const { mutateAsync: registerUser, isPending: isRegistering } = useRegister();
+
   const {
     data: verifyResponse,
     isLoading: loadingInvite,
@@ -63,9 +64,11 @@ function AcceptInviteContent() {
 
   const {
     mutate: acceptInvite,
-    isPending: actionLoading,
+    isPending: isAccepting,
     error: actionError,
   } = useAcceptInvitation();
+
+  const isActionLoading = isRegistering || isAccepting;
 
   const form = useForm<z.infer<typeof acceptInviteFormSchema>>({
     resolver: zodResolver(acceptInviteFormSchema),
@@ -78,20 +81,31 @@ function AcceptInviteContent() {
 
   const inviteData = verifyResponse?.data;
 
-  const handleAccept = (values?: z.infer<typeof acceptInviteFormSchema>) => {
-    if (!token) return;
+  const handleAccept = async (
+    values?: z.infer<typeof acceptInviteFormSchema>,
+  ) => {
+    if (!token || !inviteData) return;
 
-    acceptInvite(
-      {
-        token,
-        ...(values ? { name: values.name, password: values.password } : {}),
-      },
-      {
-        onSuccess: () => {
-          router.push("/dashboard");
+    try {
+      if (values) {
+        await registerUser({
+          name: values.name,
+          email: inviteData.email,
+          password: values.password,
+        });
+      }
+
+      acceptInvite(
+        { token },
+        {
+          onSuccess: () => {
+            router.push("/workspace");
+          },
         },
-      },
-    );
+      );
+    } catch (error) {
+      toast.error("Failed to accept invitation. Please try again.");
+    }
   };
 
   if (loadingInvite) {
@@ -122,9 +136,8 @@ function AcceptInviteContent() {
     );
   }
 
-  const workspaceName = inviteData.workspace_name || inviteData.workspace_name;
-  const isExistingUser =
-    inviteData.is_existing_user
+  const workspaceName = inviteData.workspace_name;
+  const isExistingUser = inviteData.is_existing_user;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -145,7 +158,7 @@ function AcceptInviteContent() {
           <div className="space-y-4">
             {isAuthenticated ? (
               <Button
-                loading={actionLoading}
+                loading={isActionLoading}
                 className="w-full"
                 onClick={() => handleAccept()}
               >
@@ -154,7 +167,8 @@ function AcceptInviteContent() {
             ) : (
               <div className="space-y-3 text-center">
                 <p className="text-xs text-muted-foreground">
-                  You already have an account. Please log in to accept this invitation.
+                  You already have an account. Please log in to accept this
+                  invitation.
                 </p>
                 <Button asChild className="w-full">
                   <Link
@@ -269,7 +283,7 @@ function AcceptInviteContent() {
               )}
             />
 
-            <Button loading={actionLoading} className="w-full" type="submit">
+            <Button loading={isActionLoading} className="w-full" type="submit">
               Complete Registration & Join
             </Button>
           </form>
