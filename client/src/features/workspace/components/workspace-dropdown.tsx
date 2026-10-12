@@ -33,15 +33,12 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
       .join("")
       .toUpperCase(),
     role: "Admin",
-    memberCount: 32,
+    memberCount: workspaceById.users.length,
   };
 
-  const userId = useAuthStore((state) => state.userId);
-  const { workspaceId } = useParams()
+  const { workspaceId } = useParams();
   return (
-    <DropdownMenu
-
-    >
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -81,7 +78,8 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
               {activeWorkspace.name}
             </span>
             <span className="text-[10px] text-muted-foreground truncate">
-              {activeWorkspace.memberCount} members
+              {activeWorkspace.memberCount}{" "}
+              {activeWorkspace.memberCount > 1 ? "members" : "member"}
             </span>
           </div>
         </div>
@@ -107,15 +105,16 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
           </InviteMemberModal>
 
           <MemberManagementModal>
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md">
+            <DropdownMenuItem
+              onSelect={(e) => e.preventDefault()}
+              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md"
+            >
               <Users className="size-4 text-muted-foreground shrink-0" />
               <span className="text-xs text-foreground font-medium">
                 Manage members
               </span>
             </DropdownMenuItem>
-
           </MemberManagementModal>
-
 
           <DropdownMenuItem asChild>
             <Link
