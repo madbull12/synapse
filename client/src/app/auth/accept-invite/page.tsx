@@ -172,8 +172,8 @@ function AcceptInviteContent() {
                 </p>
                 <Button asChild className="w-full">
                   <Link
-                    href={`/auth/login?redirect=/invitations/accept?token=${encodeURIComponent(
-                      token,
+                    href={`/auth/login?redirect=${encodeURIComponent(
+                      `/invitations/${token}/accept`,
                     )}`}
                   >
                     Log In to Accept
