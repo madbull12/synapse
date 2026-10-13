@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getPersistentColor, getInitials } from "@/lib/avatar";
@@ -18,7 +17,7 @@ const DirectMessageList = () => {
   ];
 
   return (
-    <ScrollArea className="h-full max-h-[500px] w-full">
+    <ScrollArea className="h-full max-h-125 w-full">
       <div className="flex flex-col gap-y-1">
         {names.map((name) => {
           const backgroundColor = getPersistentColor(name);

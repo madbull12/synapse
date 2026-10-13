@@ -54,6 +54,7 @@ export const workspaceService = {
     return res.data;
   },
 
+
   async sendInvitation(workspaceId: string, data: SendInvitationDTO) {
     const res = await privateApi.post<APIResponse<string>>(
       `/workspaces/${workspaceId}/invitations`,

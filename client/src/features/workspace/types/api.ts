@@ -32,13 +32,27 @@ export type AddMemberToWorkspaceDTO = {
   workspaceId: string;
 };
 
+export type WorkspaceMember = {
+  workspace_id: string
+  user_id: string
+  role: string
+  joined_at: string
+  user: UserDTO
+}
+
 export type WorkspaceDTO = {
   id: string;
   name: string;
   slug: string;
   logo_url?: string;
   owner_id: string;
-  users: UserDTO[];
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+    created_at: string;
+  }
+  members: WorkspaceMember[];
   created_at: string;
   updated_at: string;
 };

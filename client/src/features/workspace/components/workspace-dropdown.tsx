@@ -24,6 +24,9 @@ type Props = {
 };
 
 export default function WorkspaceDropdown({ workspaceById }: Props) {
+  const userId = useAuthStore((state) => state.userId);
+  const activeRole = workspaceById.members.find((member) => member.user_id === userId)?.role;
+
   const activeWorkspace = {
     name: workspaceById.name,
     initials: workspaceById.name
@@ -32,8 +35,8 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
       .map((word: string) => word[0])
       .join("")
       .toUpperCase(),
-    role: "Admin",
-    memberCount: workspaceById.users.length,
+    role: activeRole,
+    memberCount: workspaceById.members.length,
   };
 
   const { workspaceId } = useParams();

@@ -54,16 +54,20 @@ func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member
 }
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
+
 	err := r.db.WithContext(ctx).
-		Preload("Users").
+		Preload("Members.User").
+		Preload("Owner").
 		Table("workspaces").
 		Select("workspaces.*").
 		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
 		Where("workspace_members.user_id = ?", userId).
 		Find(&workspaces).Error
+
 	if err != nil {
 		return nil, err
 	}
+
 	return workspaces, nil
 }
 
@@ -71,13 +75,14 @@ func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, workspaceId uu
 	var workspace models.Workspace
 
 	err := r.db.WithContext(ctx).
-		Preload("Users").
+		Preload("Members.User").
+		Preload("Owner").
 		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
 		Where("workspaces.id = ? AND workspace_members.user_id = ?", workspaceId, userId).
 		First(&workspace).Error
 
 	if err != nil {
-		return nil, err // Returns gorm.ErrRecordNotFound if they aren't a member or workspace doesn't exist
+		return nil, err
 	}
 
 	return &workspace, nil
@@ -93,7 +98,7 @@ func (r *workspaceRepository) FindInvitationByToken(ctx context.Context, tx *gor
 
 	err := db.WithContext(ctx).Where("token = ?", token).First(&invite).Error
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 
 	return &invite, nil
@@ -106,9 +111,9 @@ func (r *workspaceRepository) GetWorkspaceName(ctx context.Context, workspaceID 
 		Select("name").
 		Where("id = ?", workspaceID).
 		First(&workspace).Error
-	
+
 	if err != nil {
-		return "", err 
+		return "", err
 	}
 
 	return workspace.Name, nil
