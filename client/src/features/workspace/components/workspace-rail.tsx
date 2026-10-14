@@ -91,7 +91,13 @@ export function WorkspaceRail() {
         })}
       </div>
 
-      <CreateWorkspaceModal children={<Plus className="size-5" />} />
+      <CreateWorkspaceModal
+        children={
+          <div className="flex size-11 items-center justify-center rounded-2xl border border-dashed border-border text-muted-foreground hover:rounded-xl hover:bg-muted hover:text-foreground transition-all duration-200 cursor-pointer">
+            <Plus className="size-5" />
+          </div>
+        }
+      />
     </div>
   );
 }

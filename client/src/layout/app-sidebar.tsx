@@ -43,16 +43,23 @@ export function AppSidebar({ workspaces }: Props) {
 
   const { data } = useWorkspaceById(workspaceId as string);
 
-  console.log("Data: ", data)
-
+  const hasWorkspaces = workspaces && workspaces.length > 0;
   return (
-    <Sidebar>
+    <Sidebar
+      className={cn(
+        "transition-[width] duration-200",
+        !hasWorkspaces && "w-16 [--sidebar-width:4rem]",
+      )}
+      style={{
+        ...(!hasWorkspaces && { "--sidebar-width": "4rem" }),
+      }}
+    >
       <div className="flex h-full w-full overflow-hidden">
         <div className="h-full shrink-0 border-r border-border/40">
           <WorkspaceRail />
         </div>
 
-        {data && (
+        {hasWorkspaces && data && (
           <div className="flex-1 flex flex-col h-full overflow-hidden bg-sidebar">
             <SidebarHeader className="p-2">
               <WorkspaceDropdown workspaceById={data.data} />
@@ -61,7 +68,6 @@ export function AppSidebar({ workspaces }: Props) {
             <Separator className="opacity-60" />
 
             <SidebarContent className="gap-y-2 px-2 overflow-y-auto">
-              {/* Channels Group */}
               <SidebarGroup className="p-0">
                 <Collapsible
                   open={isChannelCollapsed}
@@ -95,7 +101,6 @@ export function AppSidebar({ workspaces }: Props) {
                 </Collapsible>
               </SidebarGroup>
 
-              {/* Direct Messages Group */}
               <SidebarGroup className="p-0">
                 <Collapsible
                   open={isDirectMessageCollapsed}
@@ -130,8 +135,6 @@ export function AppSidebar({ workspaces }: Props) {
             </SidebarFooter>
           </div>
         )}
-
-
       </div>
     </Sidebar>
   );
