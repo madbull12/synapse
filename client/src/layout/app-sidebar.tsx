@@ -43,6 +43,8 @@ export function AppSidebar({ workspaces }: Props) {
 
   const { data } = useWorkspaceById(workspaceId as string);
 
+  console.log("Data: ", data)
+
   return (
     <Sidebar>
       <div className="flex h-full w-full overflow-hidden">
@@ -116,7 +118,7 @@ export function AppSidebar({ workspaces }: Props) {
                   </CollapsibleTrigger>
                   <SidebarGroupContent>
                     <CollapsibleContent>
-                      <DirectMessageList />
+                      <DirectMessageList workspaceMembers={data.data.members} />
                     </CollapsibleContent>
                   </SidebarGroupContent>
                 </Collapsible>

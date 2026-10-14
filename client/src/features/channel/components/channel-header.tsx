@@ -10,9 +10,13 @@ import {
 } from "@/components/ui/tooltip";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useParams } from "next/navigation";
+import { useWorkspaceById } from "@/features/workspace/hooks/queries/use-workspace";
+import { AvatarGroupSkeleton } from "@/features/channel/components/avatar-group-skeleton";
 
 const ChannelHeader = () => {
-  const { channelName } = useParams();
+  const { channelName, workspaceId } = useParams();
+  const { data, isLoading } = useWorkspaceById(workspaceId as string);
+
   return (
     <header className="px-4 shrink-0 flex items-center justify-between p-4 border-b border-border/40 bg-background z-50 sticky top-0">
       <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -21,7 +25,12 @@ const ChannelHeader = () => {
         <span>{channelName}</span>
       </div>
       <div className="flex items-center gap-2">
-        <AvatarGroupMembers />
+        {isLoading ? (
+          <AvatarGroupSkeleton />
+        ) : (
+          <AvatarGroupMembers workspaceMembers={data?.data.members ?? []} />
+        )}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon">

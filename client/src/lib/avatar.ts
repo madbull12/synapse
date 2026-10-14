@@ -16,10 +16,20 @@ export function getPersistentColor(name: string): string {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-/**
- * Extracts a clean 1-2 character display token
- */
+
 export function getInitials(name: string): string {
   if (!name) return "";
-  return name.trim().slice(0, 2).toUpperCase();
+
+  const parts = name.trim().split(/\s+/);
+
+  // If there's only one word, take its first 2 characters (e.g., "Admin" -> "AD")
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  // Otherwise, take the first letter of the first word and the first letter of the last word
+  const firstInitial = parts[0][0] || "";
+  const lastInitial = parts[parts.length - 1][0] || "";
+
+  return (firstInitial + lastInitial).toUpperCase();
 }

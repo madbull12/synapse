@@ -5,26 +5,36 @@ import {
   AvatarGroupCount,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { WorkspaceMember } from "@/features/workspace/types/api";
+import { getInitials } from "@/lib/avatar";
 
-const AvatarGroupMembers = () => {
+interface Props {
+  workspaceMembers: WorkspaceMember[];
+}
+
+const MAX_VISIBLE = 3;
+
+const AvatarGroupMembers = ({ workspaceMembers = [] }: Props) => {
+  const visibleMembers = workspaceMembers.slice(0, MAX_VISIBLE);
+  const overflowCount = workspaceMembers.length - MAX_VISIBLE;
+
   return (
     <AvatarGroup className="grayscale">
-      <Avatar>
-        <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-        <AvatarFallback>CN</AvatarFallback>
-      </Avatar>
-      <Avatar>
-        <AvatarImage src="https://github.com/maxleiter.png" alt="@maxleiter" />
-        <AvatarFallback>LR</AvatarFallback>
-      </Avatar>
-      <Avatar>
-        <AvatarImage
-          src="https://github.com/evilrabbit.png"
-          alt="@evilrabbit"
-        />
-        <AvatarFallback>ER</AvatarFallback>
-      </Avatar>
-      <AvatarGroupCount>+3</AvatarGroupCount>
+      {visibleMembers.map((member) => (
+        <Avatar key={member.user_id}>
+          <AvatarImage
+            src={`https://api.dicebear.com/7.x/initials/svg?seed=${member.user.name}`}
+            alt={member.user.name}
+          />
+          <AvatarFallback>
+            {getInitials(member.user.name)}
+          </AvatarFallback>
+        </Avatar>
+      ))}
+
+      {overflowCount > 0 && (
+        <AvatarGroupCount>+{overflowCount}</AvatarGroupCount>
+      )}
     </AvatarGroup>
   );
 };
