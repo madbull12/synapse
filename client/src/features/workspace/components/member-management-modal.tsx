@@ -31,6 +31,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import InviteMemberModal from "@/features/workspace/components/invite-member-workspace-modal";
+import { WorkspaceMember } from "@/features/workspace/types/api";
 interface Member {
     id: string;
     name: string;
@@ -47,9 +48,11 @@ const MOCK_MEMBERS: Member[] = [
 ];
 
 export default function MemberManagementModal({
+    workspaceMembers,
     children,
 }: {
     children?: React.ReactNode;
+    workspaceMembers: WorkspaceMember[]
 }) {
     const [open, setOpen] = React.useState(false);
     const params = useParams();
@@ -57,15 +60,17 @@ export default function MemberManagementModal({
 
     const members = MOCK_MEMBERS;
 
+    console.log("Members: ", workspaceMembers);
+
     return (
         <Credenza open={open} onOpenChange={setOpen}>
             <CredenzaTrigger asChild>
                 {children ? children : <Button variant="outline">Manage Members</Button>}
             </CredenzaTrigger>
 
-            <CredenzaContent className="sm:max-w-xl ">
+            <CredenzaContent className="md:max-w-xl ">
                 <CredenzaHeader className="flex flex-row items-center justify-between py-4 border-b border-border">
-                    <div>
+                    <div className="text-left">
                         <CredenzaTitle>Workspace Members</CredenzaTitle>
                         <CredenzaDescription>
                             Manage roles, permissions, and active collaborators.

@@ -37,7 +37,10 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
       .toUpperCase(),
     role: activeRole,
     memberCount: workspaceById.members.length,
+
   };
+
+
 
   const { workspaceId } = useParams();
   return (
@@ -107,7 +110,7 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
             </DropdownMenuItem>
           </InviteMemberModal>
 
-          <MemberManagementModal>
+          <MemberManagementModal workspaceMembers={workspaceById.members}>
             <DropdownMenuItem
               onSelect={(e) => e.preventDefault()}
               className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md"

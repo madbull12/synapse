@@ -21,7 +21,7 @@ export default function GeneralSettingsClient() {
     return (
         <div className="space-y-8 p-6 md:p-8">
             <header className="flex items-center gap-4">
-                <Link href={`/workspace/${workspaceId}`}>
+                <Link href={`/workspace/${workspaceId}/channel/general`}>
                     <ChevronLeft />
                 </Link>
                 <div>
