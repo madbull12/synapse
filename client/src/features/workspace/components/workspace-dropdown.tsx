@@ -42,6 +42,7 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
 
 
 
+  console.log("Active Workspace: ", activeWorkspace.memberCount);
   const { workspaceId } = useParams();
   return (
     <DropdownMenu>
@@ -50,12 +51,10 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
           variant="ghost"
           className="h-12 w-full flex items-center justify-start gap-2 px-2 hover:bg-muted/60 data-[state=open]:bg-muted/60 transition-all focus-visible:ring-1 focus-visible:ring-ring"
         >
-          {/* Active Workspace Avatar */}
           <div className="bg-primary text-primary-foreground rounded-lg size-8 shrink-0 grid place-items-center font-bold text-sm">
             {activeWorkspace.initials}
           </div>
 
-          {/* Stacked Workspace Name & Role */}
           <div className="flex flex-col items-start min-w-0 leading-tight">
             <span className="font-semibold text-sm text-foreground truncate w-full text-left">
               {activeWorkspace.name}

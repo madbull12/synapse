@@ -11,6 +11,7 @@ import (
 type WorkspaceMemberRepository interface {
 	GetMemberRole(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (string, error)
 	IsUserInWorkspace(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (bool, error)
+	RemoveMember(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) error
 }
 
 type workspaceMemberRepository struct {
@@ -44,4 +45,10 @@ func (r *workspaceMemberRepository) IsUserInWorkspace(ctx context.Context, works
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *workspaceMemberRepository) RemoveMember(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) error {
+	return r.db.WithContext(ctx).
+		Where("workspace_id = ? AND user_id = ?", workspaceId, userId).
+		Delete(&models.WorkspaceMember{}).Error
 }

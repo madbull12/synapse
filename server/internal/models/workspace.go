@@ -23,12 +23,12 @@ type Workspace struct {
 }
 
 type WorkspaceMember struct {
-	WorkspaceID uuid.UUID `gorm:"type:uuid;primaryKey" json:"workspace_id"`
-	UserID      uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
-	Role        string    `gorm:"type:varchar(20);default:'member'" json:"role"` // owner, admin, member
-	JoinedAt    time.Time `json:"joined_at"`
-
-	User User `gorm:"foreignKey:UserID" json:"user"`
+	WorkspaceID uuid.UUID      `gorm:"type:uuid;primaryKey" json:"workspace_id"`
+	UserID      uuid.UUID      `gorm:"type:uuid;primaryKey" json:"user_id"`
+	Role        string         `gorm:"type:varchar(20);default:'member'" json:"role"` // owner, admin, member
+	JoinedAt    time.Time      `json:"joined_at"`
+	User        User           `gorm:"foreignKey:UserID" json:"user"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 const (
