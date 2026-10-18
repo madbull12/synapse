@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"server/internal/apperr"
 	"server/internal/models"
 
 	"github.com/google/uuid"
@@ -29,10 +31,14 @@ func (r *workspaceMemberRepository) GetMemberRole(ctx context.Context, workspace
 		First(&member).Error
 
 	if err != nil {
-		return "", err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", apperr.NotFound("MEMBER_NOT_FOUND", "Workspace member not found")
+		}
+		return "", err 
 	}
 	return member.Role, nil
 }
+
 
 func (r *workspaceMemberRepository) IsUserInWorkspace(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (bool, error) {
 	var count int64

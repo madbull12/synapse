@@ -46,6 +46,5 @@ func (h *WorkspaceMemberHandler) HandleRemoveMemberFromWorkspace(c *gin.Context)
 		return
 	}
 
-	// 5. Return standardized success response
 	dto.RespondSuccess(c, http.StatusOK, "Member removed from workspace successfully", nil)
 }

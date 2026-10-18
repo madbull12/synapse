@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"server/internal/apperr"
 	"server/internal/dto"
 	"server/internal/models"
@@ -37,12 +36,9 @@ func NewChannelService(
 
 func (s *channelService) CreateChannel(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID, req dto.CreateChannelRequest) (*models.Channel, error) {
 	role, err := s.workspaceMemberRepository.GetMemberRole(ctx, workspaceId, userId)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperr.Forbidden("NOT_WORKSPACE_MEMBER", "You are not a member of this workspace")
-		}
-		return nil, apperr.Internal(err)
-	}
+if err != nil {
+    return nil, err
+}
 
 	if role == "member" {
 		return nil, apperr.Forbidden("ADMIN_REQUIRED", "Only workspace administrators can create channels")
