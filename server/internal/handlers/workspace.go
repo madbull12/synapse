@@ -163,3 +163,4 @@ func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
 
 	dto.RespondSuccess(c, http.StatusOK, "Workspace retrieved successfully", workspace)
 }
+
