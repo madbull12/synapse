@@ -34,6 +34,7 @@ import InviteMemberModal from "@/features/workspace/components/invite-member-wor
 import { WorkspaceMember } from "@/features/workspace/types/api";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { getInitials } from "@/lib/avatar";
+import { useRemoveWorkspaceMember } from "../hooks/mutations/use-workspace";
 interface Member {
   id: string;
   name: string;
@@ -62,12 +63,14 @@ export default function MemberManagementModal({
 }) {
   const [open, setOpen] = React.useState(false);
   const userId = useAuthStore((state) => state.userId);
-  const params = useParams();
-  const workspaceId = (params?.workspaceId as string) || "";
   const userRole = workspaceMembers.find((member) => member.user_id === userId)?.role;
-  const members = MOCK_MEMBERS;
+  const { workspaceId } = useParams()
+  const { mutate: removeMember, isPending } = useRemoveWorkspaceMember(workspaceId as string);
+  console.log("Workspace members: ", workspaceMembers)
 
-
+  const handleRemoveMember = (targetId: string) => {
+    removeMember(targetId)
+  }
   return (
     <Credenza open={open} onOpenChange={setOpen}>
       <CredenzaTrigger asChild>
@@ -164,7 +167,7 @@ export default function MemberManagementModal({
                         </DropdownMenuItem>
                       )}
 
-                      <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive">
+                      <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive" onClick={() => handleRemoveMember(member.user_id)}>
                         <UserMinus className="size-3.5" />
                         Remove from workspace
                       </DropdownMenuItem>

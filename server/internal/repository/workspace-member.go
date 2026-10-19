@@ -34,11 +34,10 @@ func (r *workspaceMemberRepository) GetMemberRole(ctx context.Context, workspace
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", apperr.NotFound("MEMBER_NOT_FOUND", "Workspace member not found")
 		}
-		return "", err 
+		return "", err
 	}
 	return member.Role, nil
 }
-
 
 func (r *workspaceMemberRepository) IsUserInWorkspace(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (bool, error) {
 	var count int64
@@ -54,7 +53,17 @@ func (r *workspaceMemberRepository) IsUserInWorkspace(ctx context.Context, works
 }
 
 func (r *workspaceMemberRepository) RemoveMember(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) error {
-	return r.db.WithContext(ctx).
+	result := r.db.WithContext(ctx).
 		Where("workspace_id = ? AND user_id = ?", workspaceId, userId).
-		Delete(&models.WorkspaceMember{}).Error
+		Delete(&models.WorkspaceMember{})
+
+	if result.Error != nil {
+		return apperr.Internal(result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return apperr.NotFound("MEMBER_NOT_FOUND", "Workspace member not found")
+	}
+
+	return nil
 }

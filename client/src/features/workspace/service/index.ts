@@ -63,5 +63,12 @@ export const workspaceService = {
     return res.data;
   },
 
+  async removeWorkspaceMember(workspaceId: string, targetId: string) {
+    const res = await privateApi.delete<APIResponse<string>>(
+      `/workspaces/${workspaceId}/members/${targetId}`,
+    );
+    return res.data;
+  }
+
 
 };

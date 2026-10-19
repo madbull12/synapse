@@ -82,3 +82,17 @@ export const useSendWorkspaceInvitation = (workspaceId: string) => {
     },
   });
 };
+
+export const useRemoveWorkspaceMember = (workspaceId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (targetId: string) => workspaceService.removeWorkspaceMember(workspaceId, targetId),
+    onSuccess: (data) => {
+      toast.success(data.message || "Member removed successfully!");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+    },
+  })
+}

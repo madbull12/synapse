@@ -35,8 +35,6 @@ func Run(cfg *Config) {
 	userSrv := service.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userSrv)
 
-	
-
 	workspaceMemberRepo := repository.NewWorkspaceMemberRepository(db)
 	workspaceMemberSrv := service.NewWorkspaceMemberService(workspaceMemberRepo)
 	workspaceMemberHandler := handlers.NewWorkspaceMemberHandler(workspaceMemberSrv)
@@ -54,7 +52,7 @@ func Run(cfg *Config) {
 		dto.RespondError(c, apperr.NotFound("NOT_FOUND", "The requested endpoint does not exist"))
 	})
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler)
+	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
@@ -93,7 +91,7 @@ func initDB(dsn string) *gorm.DB {
 
 func setupCORS(r *gin.Engine) {
 	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://localhost:3003")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
@@ -106,7 +104,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler,workspaceMember *handlers.WorkspaceMemberHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
@@ -133,7 +131,7 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 		protectedWorkspace.POST("/:workspaceId/invitations", workspace.HandleSendInvitation)
 		protectedWorkspace.POST("/invitations/:token/accept", workspace.HandleAcceptInvitation)
 
-		protectedWorkspace.DELETE("/:workspaceId/members/:userId")
+		protectedWorkspace.DELETE("/:workspaceId/members/:userId", workspaceMember.HandleRemoveMemberFromWorkspace)
 
 		protectedWorkspace.GET("", workspace.HandleGetUserWorkspaces)
 		protectedWorkspace.GET("/:id", workspace.GetWorkspaceById)
