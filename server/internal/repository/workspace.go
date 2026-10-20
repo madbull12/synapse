@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"server/internal/apperr"
 	"server/internal/models"
 
 	"github.com/google/uuid"
@@ -12,7 +14,7 @@ type WorkspaceRepository interface {
 	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error)
 	GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
-	AddMember(ctx context.Context, db *gorm.DB, workspace *models.WorkspaceMember) error
+	AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error
 	CreateInvitation(ctx context.Context, db *gorm.DB, invite *models.WorkspaceInvitation) error
 	FindInvitationByID(ctx context.Context, db *gorm.DB, id uuid.UUID) (*models.WorkspaceInvitation, error)
 	UpdateInvitationStatus(ctx context.Context, db *gorm.DB, id uuid.UUID, status models.InvitationStatus) error
@@ -50,7 +52,29 @@ func (r *workspaceRepository) UpdateInvitationStatus(ctx context.Context, db *go
 }
 
 func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error {
-	return db.WithContext(ctx).Create(member).Error
+	var existing models.WorkspaceMember
+
+	// 1. Check if the record already exists, including soft-deleted ones
+	err := db.WithContext(ctx).
+		Unscoped().
+		Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
+		First(&existing).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return db.WithContext(ctx).Create(member).Error
+		}
+		return apperr.Internal(err)
+	}
+
+	return db.WithContext(ctx).
+		Unscoped().
+		Model(&existing).
+		Updates(map[string]interface{}{
+			"deleted_at": nil,
+			"role":       member.Role,
+			"joined_at":  member.JoinedAt,
+		}).Error
 }
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
