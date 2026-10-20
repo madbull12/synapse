@@ -18,7 +18,7 @@ export default async function Layout({
 
   await queryClient.prefetchQuery({
     queryKey: ["workspaces"],
-    queryFn: async () => workspaces,
+    queryFn: fetchUserWorkspaces,
   });
 
   return (
@@ -26,7 +26,7 @@ export default async function Layout({
       <SidebarProvider
         style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
       >
-        <div className="flex h-screen w-screen overflow-hidde-background">
+        <div className="flex h-screen w-screen overflow-hidden bg-background">
           <AppSidebar workspaces={workspaces} />
 
           <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
