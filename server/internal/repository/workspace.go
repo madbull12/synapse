@@ -54,7 +54,6 @@ func (r *workspaceRepository) UpdateInvitationStatus(ctx context.Context, db *go
 func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error {
 	var existing models.WorkspaceMember
 
-	// 1. Check if the record already exists, including soft-deleted ones
 	err := db.WithContext(ctx).
 		Unscoped().
 		Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
@@ -69,9 +68,10 @@ func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member
 
 	return db.WithContext(ctx).
 		Unscoped().
-		Model(&existing).
+		Model(&models.WorkspaceMember{}).
+		Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
 		Updates(map[string]interface{}{
-			"deleted_at": nil,
+			"deleted_at": gorm.Expr("NULL"),
 			"role":       member.Role,
 			"joined_at":  member.JoinedAt,
 		}).Error
@@ -85,7 +85,7 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 		Table("workspaces").
 		Select("workspaces.*").
 		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
-		Where("workspace_members.user_id = ?", userId).
+		Where("workspace_members.user_id = ? AND workspace_members.deleted_at IS NULL", userId).
 		Find(&workspaces).Error
 
 	if err != nil {

@@ -24,6 +24,7 @@ export function WorkspaceRail() {
   const userId = useAuthStore((state) => state.userId);
   const { data } = useWorkspaces(userId!);
 
+
   const prefetchWorkspaceDetail = (workspaceId: string) => {
     queryClient.prefetchQuery({
       queryKey: ["workspace", workspaceId],

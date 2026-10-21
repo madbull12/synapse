@@ -184,9 +184,9 @@ export default function InviteMemberModal({
 
         <ModalFooter
           formId="invite-member-form"
-          submitLabel={isPending ? "Sending..." : "Send Invitation"}
-          cancelLabel="Cancel"
+          submitLabel={"Send Invitation"}
           isLoading={isPending}
+          cancelLabel="Cancel"
           onCancel={() => setOpen(false)}
         />
       </CredenzaContent>

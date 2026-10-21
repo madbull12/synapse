@@ -19,7 +19,7 @@ import { useVerifyInvitation } from "@/features/workspace/hooks/queries/use-work
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
 import { useAcceptInvitation } from "@/features/workspace/hooks/mutations/use-workspace";
 import { useRegister } from "@/features/auth/hooks/mutations/use-auth";
-import { toast } from "sonner";
+
 const acceptInviteFormSchema = z
   .object({
     name: z.string().min(2, {
@@ -173,7 +173,7 @@ function AcceptInviteContent() {
                 <Button asChild className="w-full">
                   <Link
                     href={`/auth/login?redirect=${encodeURIComponent(
-                      `/invitations/${token}/accept`,
+                      `/auth/accept-invite?token=${token}`,
                     )}`}
                   >
                     Log In to Accept
