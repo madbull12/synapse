@@ -7,6 +7,7 @@ import {
   AddMemberToWorkspaceDTO,
   CreateWorkspaceDTO,
   SendInvitationDTO,
+  UpdateWorksaceDTO,
 } from "@/features/workspace/types/api";
 import { toast } from "sonner";
 import { useAuthStore } from "@/features/auth/store/use-auth-store";
@@ -53,7 +54,11 @@ export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.userId);
 
-  return useMutation<APIResponse<string>, AxiosError<APIError>, AcceptInvitationDTO>({
+  return useMutation<
+    APIResponse<string>,
+    AxiosError<APIError>,
+    AcceptInvitationDTO
+  >({
     mutationFn: (data: AcceptInvitationDTO) =>
       workspaceService.acceptInvitation(data),
     onSuccess: (data) => {
@@ -84,15 +89,31 @@ export const useSendWorkspaceInvitation = (workspaceId: string) => {
 };
 
 export const useRemoveWorkspaceMember = (workspaceId: string) => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (targetId: string) => workspaceService.removeWorkspaceMember(workspaceId, targetId),
+    mutationFn: (targetId: string) =>
+      workspaceService.removeWorkspaceMember(workspaceId, targetId),
     onSuccess: (data) => {
       toast.success(data.message || "Member removed successfully!");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
     },
-  })
-}
+  });
+};
+
+export const useUpdateWorkspace = (workspaceId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateWorksaceDTO) =>
+      workspaceService.updateWorkspace(workspaceId, data),
+    onSuccess: (data) => {
+      toast.success(data.message || "Workspace updated succesfully!");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId] });
+    },
+  });
+};

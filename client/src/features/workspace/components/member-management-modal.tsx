@@ -63,14 +63,17 @@ export default function MemberManagementModal({
 }) {
   const [open, setOpen] = React.useState(false);
   const userId = useAuthStore((state) => state.userId);
-  const userRole = workspaceMembers.find((member) => member.user_id === userId)?.role;
-  const { workspaceId } = useParams()
-  const { mutate: removeMember, isPending } = useRemoveWorkspaceMember(workspaceId as string);
-  console.log("Workspace members: ", workspaceMembers)
+  const userRole = workspaceMembers.find(
+    (member) => member.user_id === userId,
+  )?.role;
+  const { workspaceId } = useParams();
+  const { mutate: removeMember, isPending } = useRemoveWorkspaceMember(
+    workspaceId as string,
+  );
 
   const handleRemoveMember = (targetId: string) => {
-    removeMember(targetId)
-  }
+    removeMember(targetId);
+  };
   return (
     <Credenza open={open} onOpenChange={setOpen}>
       <CredenzaTrigger asChild>
@@ -167,16 +170,18 @@ export default function MemberManagementModal({
                         </DropdownMenuItem>
                       )}
 
-                      <DropdownMenuItem className="gap-2 text-xs text-destructive focus:text-destructive" onClick={() => handleRemoveMember(member.user_id)}>
+                      <DropdownMenuItem
+                        className="gap-2 text-xs text-destructive focus:text-destructive"
+                        onClick={() => handleRemoveMember(member.user_id)}
+                      >
                         <UserMinus className="size-3.5" />
                         Remove from workspace
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-
               </div>
-            )
+            );
           })}
         </CredenzaBody>
       </CredenzaContent>

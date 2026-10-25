@@ -28,6 +28,7 @@ type WorkspaceService interface {
 	SendInvitation(ctx context.Context, workspaceID uuid.UUID, inviterID uuid.UUID, req *dto.SendInvitationRequest) (*models.WorkspaceInvitation, error)
 	AcceptInvitationByToken(ctx context.Context, token string, userID uuid.UUID) error
 	VerifyInvitation(ctx context.Context, rawToken string) (*dto.InvitationDetails, error)
+	UpdateWorkspace(ctx context.Context, workspaceID uuid.UUID, userID uuid.UUID, name string) (*models.Workspace, error)
 }
 
 type workspaceService struct {
@@ -471,9 +472,36 @@ func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid
 }
 
 func (s *workspaceService) GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
-	workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, workspaceId, userId)
+	workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, s.db, workspaceId, userId)
 	if err != nil {
 		return nil, apperr.Forbidden("UNAUTHORIZED_WORKSPACE_ACCESS", "You do not have access to this workspace")
 	}
 	return workspace, nil
 }
+
+func (s *workspaceService) UpdateWorkspace(ctx context.Context, workspaceID uuid.UUID, userID uuid.UUID, name string) (*models.Workspace, error) {
+    workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, s.db, workspaceID, userID)
+    if err != nil {
+        return nil, err 
+    }
+
+	actorRole, err := s.workspaceMemberRepository.GetMemberRole(ctx,workspaceID,userID)
+	if err != nil {
+		return nil, err
+	}
+	if actorRole == "member" {
+		return nil, apperr.Forbidden("UNAUTHORIZED", "members cannot update the workspace name")
+	}
+
+    if name != "" {
+        workspace.Name = name
+    }
+
+    err = s.workspaceRepository.UpdateWorkspace(ctx, s.db, workspace)
+    if err != nil {
+        return nil, err
+    }
+
+    return workspace, nil
+}
+

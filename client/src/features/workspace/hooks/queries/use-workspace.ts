@@ -12,7 +12,7 @@ export const useWorkspaces = (userId: string) => {
   return useQuery<WorkspaceResponse, AxiosError<APIError>>({
     queryKey: ["workspaces", userId],
     queryFn: () => workspaceService.getUserWorkspaces(),
-    enabled: !!userId, // Only run the query if userId is provided
+    enabled: !!userId,
   });
 };
 
@@ -23,8 +23,6 @@ export const useWorkspaceById = (workspaceId: string) => {
     enabled: !!workspaceId,
   });
 };
-
-
 
 export const useVerifyInvitation = (token: string) => {
   return useQuery<VerifyInvitationResponse, AxiosError<APIError>>({

@@ -15,7 +15,6 @@ export interface InvitationDetails {
 
 export type VerifyInvitationResponse = APIResponse<InvitationDetails>;
 
-
 export interface AcceptInvitationDTO {
   token: string;
   name?: string;
@@ -32,13 +31,17 @@ export type AddMemberToWorkspaceDTO = {
   workspaceId: string;
 };
 
+export type UpdateWorksaceDTO = {
+  name: string;
+};
+
 export type WorkspaceMember = {
-  workspace_id: string
-  user_id: string
-  role: string
-  joined_at: string
-  user: UserDTO
-}
+  workspace_id: string;
+  user_id: string;
+  role: string;
+  joined_at: string;
+  user: UserDTO;
+};
 
 export type WorkspaceDTO = {
   id: string;
@@ -51,7 +54,7 @@ export type WorkspaceDTO = {
     name: string;
     email: string;
     created_at: string;
-  }
+  };
   members: WorkspaceMember[];
   created_at: string;
   updated_at: string;

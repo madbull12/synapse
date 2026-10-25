@@ -4,6 +4,7 @@ import {
   AddMemberToWorkspaceDTO,
   CreateWorkspaceDTO,
   SendInvitationDTO,
+  UpdateWorksaceDTO,
   VerifyInvitationResponse,
   WorkspaceByIdResponse,
   WorkspaceResponse,
@@ -18,15 +19,17 @@ export const workspaceService = {
   async verifyInvitation(token: string): Promise<VerifyInvitationResponse> {
     const res = await publicApi.get<VerifyInvitationResponse>(
       `/workspaces/invitations/verify`,
-      { params: { token } }
+      { params: { token } },
     );
     return res.data;
   },
 
-  async acceptInvitation(data: AcceptInvitationDTO): Promise<APIResponse<string>> {
+  async acceptInvitation(
+    data: AcceptInvitationDTO,
+  ): Promise<APIResponse<string>> {
     const res = await privateApi.post<APIResponse<string>>(
       `/workspaces/invitations/${data.token}/accept`,
-      { name: data.name, password: data.password }
+      { name: data.name, password: data.password },
     );
     return res.data;
   },
@@ -54,7 +57,6 @@ export const workspaceService = {
     return res.data;
   },
 
-
   async sendInvitation(workspaceId: string, data: SendInvitationDTO) {
     const res = await privateApi.post<APIResponse<string>>(
       `/workspaces/${workspaceId}/invitations`,
@@ -68,7 +70,13 @@ export const workspaceService = {
       `/workspaces/${workspaceId}/members/${targetId}`,
     );
     return res.data;
-  }
+  },
 
-
+  async updateWorkspace(workspaceId: string, data: UpdateWorksaceDTO) {
+    const res = await privateApi.put<APIResponse<string>>(
+      `/workspaces/${workspaceId}`,
+      data,
+    );
+    return res.data;
+  },
 };

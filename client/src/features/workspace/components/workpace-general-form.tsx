@@ -9,23 +9,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { generalSettingsSchema, GeneralSettingsValues } from "@/features/workspace/schemas/workspace-settings";
+import {
+  generalSettingsSchema,
+  GeneralSettingsValues,
+} from "@/features/workspace/schemas/workspace-settings";
+import { useUpdateWorkspace } from "@/features/workspace/hooks/mutations/use-workspace";
+import { useWorkspaceById } from "@/features/workspace/hooks/queries/use-workspace";
+import { useAuthStore } from "@/features/auth/store/use-auth-store";
+import { useRouter } from "next/navigation";
 
 interface WorkspaceGeneralFormProps {
   workspaceId: string;
-  initialData: GeneralSettingsValues & { slug: string }; // Keep slug for display
 }
 
-export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGeneralFormProps) {
+export function WorkspaceGeneralForm({
+  workspaceId,
+}: WorkspaceGeneralFormProps) {
   const form = useForm<GeneralSettingsValues>({
     resolver: zodResolver(generalSettingsSchema),
     defaultValues: {
-      name: initialData.name,
-      imageUrl: initialData.imageUrl,
+      name: "",
+      imageUrl: "",
     },
   });
 
+  const { data } = useWorkspaceById(workspaceId);
+  const userId = useAuthStore((state) => state.userId);
+  const role = data?.data.members.find(
+    (member) => member.user_id === userId,
+  )?.role;
+
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (data?.data.name) {
+      form.setValue("name", data?.data.name);
+    }
+  }, [data]);
   const isSubmitting = form.formState.isSubmitting;
   const workspaceName = form.watch("name") || "Workspace";
   const currentImageUrl = form.watch("imageUrl");
@@ -38,13 +58,7 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
     .slice(0, 2);
 
   const onSubmit = async (values: GeneralSettingsValues) => {
-    try {
-      console.log("Saving workspace settings for ID:", workspaceId, values);
-      toast.success("Workspace settings updated successfully.");
-      form.reset(values);
-    } catch (error) {
-      toast.error("Failed to update workspace settings.");
-    }
+    updateWorkspace(values);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +68,13 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
       form.setValue("imageUrl", fakeUrl, { shouldDirty: true });
     }
   };
+
+  const { mutate: updateWorkspace } = useUpdateWorkspace(workspaceId);
+
+  console.log("Role: ", role);
+  if (role === "member") {
+    router.back();
+  }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -71,7 +92,11 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
         {/* Workspace Avatar */}
         <div className="flex items-center gap-5">
           <Avatar className="size-16  border border-border">
-            <AvatarImage src={currentImageUrl} alt={workspaceName} className="object-cover" />
+            <AvatarImage
+              src={currentImageUrl}
+              alt={workspaceName}
+              className="object-cover"
+            />
             <AvatarFallback className=" bg-muted text-foreground font-semibold text-base">
               {fallbackInitials || "WS"}
             </AvatarFallback>
@@ -79,7 +104,12 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" size="sm" className="relative gap-2 h-8 text-xs">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="relative gap-2 h-8 text-xs"
+              >
                 <Upload className="size-3.5" />
                 Upload logo
                 <input
@@ -96,7 +126,9 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
                   variant="ghost"
                   size="sm"
                   className="h-8 text-xs text-muted-foreground hover:text-destructive"
-                  onClick={() => form.setValue("imageUrl", "", { shouldDirty: true })}
+                  onClick={() =>
+                    form.setValue("imageUrl", "", { shouldDirty: true })
+                  }
                 >
                   Remove
                 </Button>
@@ -111,14 +143,20 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
         <div className="grid gap-5 md:grid-cols-2 pt-2">
           <div className="space-y-2">
             <Label htmlFor="name">Workspace Name</Label>
-            <Input className="text-xs" id="name" disabled={isSubmitting} {...form.register("name")} />
+            <Input
+              className="text-xs"
+              id="name"
+              disabled={isSubmitting}
+              {...form.register("name")}
+            />
             {form.formState.errors.name && (
-              <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+              <p className="text-xs text-destructive">
+                {form.formState.errors.name.message}
+              </p>
             )}
           </div>
 
-
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="slug">Workspace URL Handle</Label>
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -139,12 +177,16 @@ export function WorkspaceGeneralForm({ workspaceId, initialData }: WorkspaceGene
             <p className="text-[11px] text-muted-foreground">
               Your workspace URL identifier cannot be changed once created.
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={isSubmitting || !form.formState.isDirty} className="gap-2">
+        <Button
+          type="submit"
+          disabled={isSubmitting || !form.formState.isDirty}
+          className="gap-2"
+        >
           {isSubmitting && <Loader2 className="size-4 animate-spin" />}
           Save Changes
         </Button>

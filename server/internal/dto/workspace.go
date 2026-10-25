@@ -10,7 +10,7 @@ type InvitationDetails struct {
 type CreateWorkspaceRequest struct {
 	Name    string `json:"name" binding:"required,min=2,max=100"`
 	Slug    string `json:"slug" binding:"required,min=2,max=100"`
-	LogoURL string `json:"logo_url"`
+	LogoURL string `json:"logo_url"` 
 }
 
 type AddWorkspaceMemberRequest struct {
@@ -21,4 +21,8 @@ type AddWorkspaceMemberRequest struct {
 type SendInvitationRequest struct {
 	Email string `json:"email" binding:"required,email"`
 	Role  string `json:"role" binding:"omitempty,oneof=member admin"`
+}
+
+type UpdateWorkspaceRequest struct {
+    Name string `json:"name" binding:"required"`
 }

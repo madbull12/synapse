@@ -25,7 +25,9 @@ type Props = {
 
 export default function WorkspaceDropdown({ workspaceById }: Props) {
   const userId = useAuthStore((state) => state.userId);
-  const activeRole = workspaceById.members.find((member) => member.user_id === userId)?.role;
+  const activeRole = workspaceById.members.find(
+    (member) => member.user_id === userId,
+  )?.role;
 
   const activeWorkspace = {
     name: workspaceById.name,
@@ -37,12 +39,10 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
       .toUpperCase(),
     role: activeRole,
     memberCount: workspaceById.members.length,
-
   };
 
+  const canAccessSettings = activeRole === "admin" || activeRole === "owner";
 
-
-  console.log("Active Workspace: ", activeWorkspace.memberCount);
   const { workspaceId } = useParams();
   return (
     <DropdownMenu>
@@ -121,17 +121,19 @@ export default function WorkspaceDropdown({ workspaceById }: Props) {
             </DropdownMenuItem>
           </MemberManagementModal>
 
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/workspace/${workspaceId}/settings/general`}
-              className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md"
-            >
-              <Settings className="size-4 text-muted-foreground shrink-0" />
-              <span className="text-xs text-foreground font-medium">
-                Workspace settings
-              </span>
-            </Link>
-          </DropdownMenuItem>
+          {canAccessSettings && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/workspace/${workspaceId}/settings/general`}
+                className="flex items-center gap-2 px-2 py-1.5 cursor-pointer rounded-md"
+              >
+                <Settings className="size-4 text-muted-foreground shrink-0" />
+                <span className="text-xs text-foreground font-medium">
+                  Workspace settings
+                </span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator className="my-1" />

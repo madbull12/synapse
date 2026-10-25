@@ -127,8 +127,11 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	protectedWorkspace.Use(middleware.AuthRequired())
 	{
 		protectedWorkspace.POST("", workspace.HandleCreateWorkspace)
+		protectedWorkspace.PUT("/:workspaceId",workspace.UpdateWorkspace)
+
 		protectedWorkspace.POST("/:workspaceId/members", workspace.HandleAddMember)
 		protectedWorkspace.POST("/:workspaceId/invitations", workspace.HandleSendInvitation)
+
 		protectedWorkspace.POST("/invitations/:token/accept", workspace.HandleAcceptInvitation)
 
 		protectedWorkspace.DELETE("/:workspaceId/members/:userId", workspaceMember.HandleRemoveMemberFromWorkspace)

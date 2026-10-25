@@ -5,6 +5,7 @@ import (
 	"errors"
 	"server/internal/apperr"
 	"server/internal/models"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,13 +14,14 @@ import (
 type WorkspaceRepository interface {
 	Create(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 	GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error)
-	GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
+	GetByIdAndUser(ctx context.Context,db *gorm.DB, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error)
 	AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error
 	CreateInvitation(ctx context.Context, db *gorm.DB, invite *models.WorkspaceInvitation) error
 	FindInvitationByID(ctx context.Context, db *gorm.DB, id uuid.UUID) (*models.WorkspaceInvitation, error)
 	UpdateInvitationStatus(ctx context.Context, db *gorm.DB, id uuid.UUID, status models.InvitationStatus) error
 	FindInvitationByToken(ctx context.Context, tx *gorm.DB, token string) (*models.WorkspaceInvitation, error)
 	GetWorkspaceName(ctx context.Context, workspaceID uuid.UUID) (string, error)
+	UpdateWorkspace(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error
 }
 
 type workspaceRepository struct {
@@ -52,30 +54,38 @@ func (r *workspaceRepository) UpdateInvitationStatus(ctx context.Context, db *go
 }
 
 func (r *workspaceRepository) AddMember(ctx context.Context, db *gorm.DB, member *models.WorkspaceMember) error {
-	var existing models.WorkspaceMember
+    if member.Role == "" {
+        member.Role = "member"
+    }
+    if member.JoinedAt.IsZero() {
+        member.JoinedAt = time.Now()
+    }
 
-	err := db.WithContext(ctx).
-		Unscoped().
-		Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
-		First(&existing).Error
+    var existing models.WorkspaceMember
 
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return db.WithContext(ctx).Create(member).Error
-		}
-		return apperr.Internal(err)
-	}
+    err := db.WithContext(ctx).
+        Unscoped().
+        Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
+        First(&existing).Error
 
-	return db.WithContext(ctx).
-		Unscoped().
-		Model(&models.WorkspaceMember{}).
-		Where("workspace_id = ? AND user_id = ?", member.WorkspaceID, member.UserID).
-		Updates(map[string]interface{}{
-			"deleted_at": gorm.Expr("NULL"),
-			"role":       member.Role,
-			"joined_at":  member.JoinedAt,
-		}).Error
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return db.WithContext(ctx).Create(member).Error
+        }
+        return apperr.Internal(err)
+    }
+
+    // Force-clear deleted_at and update role/joined_at
+    return db.WithContext(ctx).
+        Unscoped().
+        Model(&existing).
+        Updates(map[string]interface{}{
+            "deleted_at": nil,
+            "role":       member.Role,
+            "joined_at":  member.JoinedAt,
+        }).Error
 }
+
 func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID) ([]*models.Workspace, error) {
 	var workspaces []*models.Workspace
 
@@ -95,21 +105,24 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 	return workspaces, nil
 }
 
-func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
-	var workspace models.Workspace
+func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, db *gorm.DB, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
+    var workspace models.Workspace
 
-	err := r.db.WithContext(ctx).
-		Preload("Members.User").
-		Preload("Owner").
-		Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
-		Where("workspaces.id = ? AND workspace_members.user_id = ?", workspaceId, userId).
-		First(&workspace).Error
+    err := db.WithContext(ctx).
+        Preload("Members.User").
+        Preload("Owner").
+        Joins("JOIN workspace_members ON workspace_members.workspace_id = workspaces.id").
+        Where("workspaces.id = ? AND workspace_members.user_id = ?", workspaceId, userId).
+        First(&workspace).Error
 
-	if err != nil {
-		return nil, err
-	}
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, apperr.NotFound("NOT_FOUND","workspace not found or access denied")
+        }
+        return nil, apperr.Internal(err)
+    }
 
-	return &workspace, nil
+    return &workspace, nil
 }
 
 func (r *workspaceRepository) FindInvitationByToken(ctx context.Context, tx *gorm.DB, token string) (*models.WorkspaceInvitation, error) {
@@ -141,4 +154,18 @@ func (r *workspaceRepository) GetWorkspaceName(ctx context.Context, workspaceID 
 	}
 
 	return workspace.Name, nil
+}
+
+
+func (r *workspaceRepository) UpdateWorkspace(ctx context.Context, db *gorm.DB, workspace *models.Workspace) error {
+    result := db.WithContext(ctx).Save(workspace)
+    if result.Error != nil {
+        return apperr.Internal(result.Error)
+    }
+
+    if result.RowsAffected == 0 {
+        return apperr.NotFound("NOT_FOUND", "Workspace can't be found")
+    }
+
+    return nil
 }
