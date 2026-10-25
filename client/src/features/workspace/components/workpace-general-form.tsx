@@ -71,7 +71,6 @@ export function WorkspaceGeneralForm({
 
   const { mutate: updateWorkspace } = useUpdateWorkspace(workspaceId);
 
-  console.log("Role: ", role);
   if (role === "member") {
     router.back();
   }

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  MessageSquare,
   Paperclip,
   AtSign,
   Smile,
@@ -76,7 +75,10 @@ const MOCK_MESSAGES = [
 export default function ChatPanel() {
   const [messages, setMessages] = React.useState(MOCK_MESSAGES);
   const [inputValue, setInputValue] = React.useState("");
-
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
@@ -93,7 +95,9 @@ export default function ChatPanel() {
     setMessages((prev) => [...prev, newMessage]);
     setInputValue("");
   };
-
+  React.useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
   return (
     <div className="flex flex-1 flex-col bg-background text-foreground">
       <MessageScrollerProvider autoScroll>
@@ -170,6 +174,7 @@ export default function ChatPanel() {
                     </div>
                   </MessageScrollerItem>
                 ))}
+                <div ref={messagesEndRef} />
               </MessageScrollerContent>
             </div>
           </MessageScrollerViewport>

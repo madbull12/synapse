@@ -12,30 +12,19 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const queryClient = new QueryClient();
-
-  const workspaces = await fetchUserWorkspaces();
-
-  await queryClient.prefetchQuery({
-    queryKey: ["workspaces"],
-    queryFn: fetchUserWorkspaces,
-  });
-
   return (
-    <HydrationBoundary state={dehydrate(queryClient)}>
-      <SidebarProvider
-        style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
-      >
-        <div className="flex h-screen w-screen overflow-hidden bg-background">
-          <AppSidebar workspaces={workspaces} />
+    // <HydrationBoundary>
+    <SidebarProvider
+      style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
+    >
+      <div className="flex h-screen w-screen overflow-hidden bg-background">
+        <AppSidebar />
 
-          <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-            <div className="flex-1 overflow-y-auto bg-background">
-              {children}
-            </div>
-          </main>
-        </div>
-      </SidebarProvider>
-    </HydrationBoundary>
+        <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+          <div className="flex-1 overflow-y-auto bg-background">{children}</div>
+        </main>
+      </div>
+    </SidebarProvider>
+    // </HydrationBoundary>
   );
 }

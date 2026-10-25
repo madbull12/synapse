@@ -7,8 +7,9 @@ import {
   WorkspaceByIdResponse,
   WorkspaceResponse,
 } from "@/features/workspace/types/api";
+import { UserId } from "@/features/auth/store/use-auth-store";
 
-export const useWorkspaces = (userId: string) => {
+export const useWorkspaces = (userId: UserId) => {
   return useQuery<WorkspaceResponse, AxiosError<APIError>>({
     queryKey: ["workspaces", userId],
     queryFn: () => workspaceService.getUserWorkspaces(),
