@@ -99,8 +99,11 @@ func (r *workspaceRepository) GetByUserId(ctx context.Context, userId uuid.UUID)
 		Find(&workspaces).Error
 
 	if err != nil {
-		return nil, err
-	}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperr.NotFound("NOT_FOUND","workspace not found")
+		}
+        return nil, apperr.Internal(err)
+    }
 
 	return workspaces, nil
 }
@@ -117,7 +120,8 @@ func (r *workspaceRepository) GetByIdAndUser(ctx context.Context, db *gorm.DB, w
 
     if err != nil {
         if errors.Is(err, gorm.ErrRecordNotFound) {
-            return nil, apperr.NotFound("NOT_FOUND","workspace not found or access denied")
+        	return nil, apperr.NotFound("NOT_FOUND","workspace not found")
+
         }
         return nil, apperr.Internal(err)
     }

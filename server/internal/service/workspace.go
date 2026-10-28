@@ -472,13 +472,13 @@ func (s *workspaceService) GetWorkspacesForUser(ctx context.Context, userID uuid
 }
 
 func (s *workspaceService) GetWorkspaceForUser(ctx context.Context, workspaceId uuid.UUID, userId uuid.UUID) (*models.Workspace, error) {
-	workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, s.db, workspaceId, userId)
-	if err != nil {
-		return nil, apperr.Forbidden("UNAUTHORIZED_WORKSPACE_ACCESS", "You do not have access to this workspace")
-	}
-	return workspace, nil
+    workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, s.db, workspaceId, userId)
+    if err != nil {
+        return nil, err
+    }
+    
+    return workspace, nil
 }
-
 func (s *workspaceService) UpdateWorkspace(ctx context.Context, workspaceID uuid.UUID, userID uuid.UUID, name string) (*models.Workspace, error) {
     workspace, err := s.workspaceRepository.GetByIdAndUser(ctx, s.db, workspaceID, userID)
     if err != nil {
