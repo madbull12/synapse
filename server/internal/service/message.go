@@ -44,7 +44,7 @@ func (s *messageService) SendMessage(ctx context.Context, channelID, userID uuid
 
 	isMember, err := s.channelRepo.IsUserInChannel(ctx, channelID, userID)
     if err != nil {
-        return nil, err
+       return nil, apperr.Internal(err)
     }
     if !isMember {
         return nil, apperr.Forbidden("UNAUTHORIZED_CHANNEL_ACCESS", "You are not a member of this channel")

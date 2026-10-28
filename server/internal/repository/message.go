@@ -30,7 +30,7 @@ func (r *messageRepository) Create(ctx context.Context, db *gorm.DB, message *mo
 
 func (r *messageRepository) GetByChannelID(ctx context.Context, db *gorm.DB, channelID uuid.UUID, before *time.Time,limit int) ([]models.Message, error) {
 	var messages []models.Message
-	query := db.WithContext(ctx).Where("channel_id = ?", channelID).Find(&messages).Limit(limit)
+	query := db.WithContext(ctx).Where("channel_id = ?", channelID).Preload("User").Find(&messages).Limit(limit)
 
 	if before != nil {
         query = query.Where("created_at < ?", before)
