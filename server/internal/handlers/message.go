@@ -24,7 +24,7 @@ func NewMessageHandler(messageService service.MessageService) *MessageHandler {
 }
 
 func (h *MessageHandler) HandleSendMessage(c *gin.Context) {
-	channelIdParam := c.Param("channel_id")
+	channelIdParam := c.Param("channelId")
 	channelId, err := uuid.Parse(channelIdParam)
 	if err != nil {
 		dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid channel ID format"))
@@ -53,7 +53,7 @@ func (h *MessageHandler) HandleSendMessage(c *gin.Context) {
 
 func (h *MessageHandler) HandleGetChannelMessages(c *gin.Context) {
 	// 1. Parse and validate channel ID from route params
-	channelIdParam := c.Param("channel_id")
+	channelIdParam := c.Param("channelId")
 	channelId, err := uuid.Parse(channelIdParam)
 	if err != nil {
 		dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid channel ID format"))

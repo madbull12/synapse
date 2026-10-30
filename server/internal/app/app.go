@@ -48,7 +48,7 @@ func Run(cfg *Config) {
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
 	messageRepo := repository.NewMessageRepository()
-	messageSrv := service.NewMessageService(db,messageRepo,channelRepo)
+	messageSrv := service.NewMessageService(db, messageRepo, channelRepo)
 	messageHandler := handlers.NewMessageHandler(messageSrv)
 
 	r := gin.Default()
@@ -56,7 +56,7 @@ func Run(cfg *Config) {
 		dto.RespondError(c, apperr.NotFound("NOT_FOUND", "The requested endpoint does not exist"))
 	})
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler,messageHandler)
+	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler, messageHandler)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
@@ -86,7 +86,7 @@ func initDB(dsn string) *gorm.DB {
 	log.Println("Database connection pool configured successfully.")
 
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}, &models.WorkspaceInvitation{},&models.Message{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}, &models.WorkspaceInvitation{}, &models.Message{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -108,7 +108,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler,message *handlers.MessageHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler, message *handlers.MessageHandler) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
@@ -131,7 +131,7 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	protectedWorkspace.Use(middleware.AuthRequired())
 	{
 		protectedWorkspace.POST("", workspace.HandleCreateWorkspace)
-		protectedWorkspace.PUT("/:workspaceId",workspace.UpdateWorkspace)
+		protectedWorkspace.PUT("/:workspaceId", workspace.UpdateWorkspace)
 
 		protectedWorkspace.POST("/:workspaceId/members", workspace.HandleAddMember)
 		protectedWorkspace.POST("/:workspaceId/invitations", workspace.HandleSendInvitation)
@@ -141,17 +141,17 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 		protectedWorkspace.DELETE("/:workspaceId/members/:userId", workspaceMember.HandleRemoveMemberFromWorkspace)
 
 		protectedWorkspace.GET("", workspace.HandleGetUserWorkspaces)
-		protectedWorkspace.GET("/:id", workspace.GetWorkspaceById)
+		protectedWorkspace.GET("/:workspaceId", workspace.GetWorkspaceById)
+
+		protectedWorkspace.POST("/:workspaceId/channels", channel.HandleCreateChannel)
+		protectedWorkspace.GET("/:workspaceId/channels", channel.HandleGetWorkspaceChannels)
 	}
 
-	protectedChannel := v1.Group("/channels")
-	protectedChannel.Use(middleware.AuthRequired())
+	channels := v1.Group("/channels", middleware.AuthRequired())
 	{
-		protectedChannel.POST("/:workspaceId", channel.HandleCreateChannel)
-		protectedChannel.GET("/:workspaceId", channel.HandleGetWorkspaceChannels)
+		channels.GET("/:channelId/messages", message.HandleGetChannelMessages)
 
-		protectedChannel.GET("/:channel_id/messages", message.HandleGetChannelMessages)
-        protectedChannel.POST("/:channel_id/messages", message.HandleSendMessage)
+		channels.POST("/:channelId/messages", message.HandleSendMessage)
 	}
 
 }

@@ -148,7 +148,7 @@ func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
 		return
 	}
 
-	idParam := c.Param("id")
+	idParam := c.Param("workspaceId")
 	workspaceId, err := uuid.Parse(idParam)
 	if err != nil {
 		dto.RespondError(c, apperr.BadRequest("INVALID_UUID", "Provided workspace ID is invalid"))
@@ -165,30 +165,30 @@ func (h *WorkspaceHandler) GetWorkspaceById(c *gin.Context) {
 }
 
 func (h *WorkspaceHandler) UpdateWorkspace(c *gin.Context) {
-    workspaceIDStr := c.Param("workspaceId")
-    workspaceID, err := uuid.Parse(workspaceIDStr)
-    if err != nil {
-        dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid workspace ID format"))
-        return
-    }
+	workspaceIDStr := c.Param("workspaceId")
+	workspaceID, err := uuid.Parse(workspaceIDStr)
+	if err != nil {
+		dto.RespondError(c, apperr.BadRequest("INVALID_ID", "Invalid workspace ID format"))
+		return
+	}
 
-    userID, err := apputil.GetUserID(c)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	userID, err := apputil.GetUserID(c)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    var req dto.UpdateWorkspaceRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        dto.RespondError(c, apperr.BadRequest("INVALID_REQUEST", err.Error()))
-        return
-    }
+	var req dto.UpdateWorkspaceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		dto.RespondError(c, apperr.BadRequest("INVALID_REQUEST", err.Error()))
+		return
+	}
 
-    workspace, err := h.srv.UpdateWorkspace(c.Request.Context(), workspaceID, userID, req.Name)
-    if err != nil {
-        dto.RespondError(c, err)
-        return
-    }
+	workspace, err := h.srv.UpdateWorkspace(c.Request.Context(), workspaceID, userID, req.Name)
+	if err != nil {
+		dto.RespondError(c, err)
+		return
+	}
 
-    dto.RespondSuccess(c, 200, "Workspace updated successfully", workspace)
+	dto.RespondSuccess(c, 200, "Workspace updated successfully", workspace)
 }
