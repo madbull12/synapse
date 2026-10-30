@@ -47,12 +47,16 @@ func Run(cfg *Config) {
 	workspaceSrv := service.NewWorkspaceService(db, workspaceRepo, channelRepo, authRepo, workspaceMemberRepo)
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
+	messageRepo := repository.NewMessageRepository()
+	messageSrv := service.NewMessageService(db,messageRepo,channelRepo)
+	messageHandler := handlers.NewMessageHandler(messageSrv)
+
 	r := gin.Default()
 	r.NoRoute(func(c *gin.Context) {
 		dto.RespondError(c, apperr.NotFound("NOT_FOUND", "The requested endpoint does not exist"))
 	})
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler)
+	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler,messageHandler)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
@@ -82,7 +86,7 @@ func initDB(dsn string) *gorm.DB {
 	log.Println("Database connection pool configured successfully.")
 
 	log.Println("Running database migrations...")
-	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}, &models.WorkspaceInvitation{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.RefreshToken{}, &models.Workspace{}, &models.WorkspaceMember{}, &models.Channel{}, &models.ChannelMember{}, &models.WorkspaceInvitation{},&models.Message{}); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
@@ -104,7 +108,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler,message *handlers.MessageHandler) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
@@ -145,6 +149,9 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	{
 		protectedChannel.POST("/:workspaceId", channel.HandleCreateChannel)
 		protectedChannel.GET("/:workspaceId", channel.HandleGetWorkspaceChannels)
+
+		protectedChannel.GET("/:channel_id/messages", message.HandleGetChannelMessages)
+        protectedChannel.POST("/:channel_id/messages", message.HandleSendMessage)
 	}
 
 }
