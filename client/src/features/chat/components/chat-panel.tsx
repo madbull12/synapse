@@ -9,11 +9,11 @@ import {
   MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import {
-  ChatInputForm,
   ChatMessageItem,
-  DaySeparator,
   Message,
-} from "./chat-message-item";
+} from "@/features/chat/components/chat-message-item";
+import { ChatInputForm } from "@/features/chat/components/chat-input-form";
+import { DaySeparator } from "@/features/chat/components/day-separator";
 
 const MOCK_MESSAGES: Message[] = [
   {
