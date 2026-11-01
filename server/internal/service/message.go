@@ -6,6 +6,7 @@ import (
 	"server/internal/dto"
 	"server/internal/models"
 	"server/internal/repository"
+	"server/internal/websocket"
 	"strings"
 	"time"
 
@@ -22,13 +23,15 @@ type messageService struct {
 	db          *gorm.DB
 	messageRepo repository.MessageRepository
 	channelRepo repository.ChannelRepository
+	wsHub       *websocket.Hub 
 }
 
-func NewMessageService(db *gorm.DB, messageRepo repository.MessageRepository, channelRepo repository.ChannelRepository) MessageService {
+func NewMessageService(db *gorm.DB, messageRepo repository.MessageRepository, channelRepo repository.ChannelRepository, wsHub *websocket.Hub) MessageService {
 	return &messageService{
 		db:          db,
 		messageRepo: messageRepo,
 		channelRepo: channelRepo,
+		wsHub:       wsHub,
 	}
 }
 
@@ -55,6 +58,12 @@ func (s *messageService) SendMessage(ctx context.Context, channelID, userID uuid
 	if err := s.messageRepo.Create(ctx, s.db, message); err != nil {
 		return nil, err
 	}
+
+	s.wsHub.Broadcast <- websocket.MessagePayload{
+        ChannelID: channelID.String(),
+        Event:     "new_message",
+        Data:      message,
+    }
 
 	return message, nil
 }

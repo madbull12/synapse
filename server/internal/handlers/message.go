@@ -52,7 +52,6 @@ func (h *MessageHandler) HandleSendMessage(c *gin.Context) {
 }
 
 func (h *MessageHandler) HandleGetChannelMessages(c *gin.Context) {
-	// 1. Parse and validate channel ID from route params
 	channelIdParam := c.Param("channelId")
 	channelId, err := uuid.Parse(channelIdParam)
 	if err != nil {
@@ -60,14 +59,12 @@ func (h *MessageHandler) HandleGetChannelMessages(c *gin.Context) {
 		return
 	}
 
-	// 2. Retrieve authenticated user ID using apputil helper
 	userId, err := apputil.GetUserID(c)
 	if err != nil {
 		dto.RespondError(c, err)
 		return
 	}
 
-	// 3. Parse optional cursor parameter (`before`)
 	var beforePtr *time.Time
 	if beforeQuery := c.Query("before"); beforeQuery != "" {
 		parsedTime, err := time.Parse(time.RFC3339, beforeQuery)
@@ -78,7 +75,6 @@ func (h *MessageHandler) HandleGetChannelMessages(c *gin.Context) {
 		beforePtr = &parsedTime
 	}
 
-	// 4. Parse optional limit parameter with a default fallback
 	limit := 50
 	if limitQuery := c.Query("limit"); limitQuery != "" {
 		if parsedLimit, err := strconv.Atoi(limitQuery); err == nil && parsedLimit > 0 {
@@ -86,13 +82,11 @@ func (h *MessageHandler) HandleGetChannelMessages(c *gin.Context) {
 		}
 	}
 
-	// 5. Delegate to service layer
 	result, err := h.messageService.GetChannelMessages(c.Request.Context(), channelId, userId, beforePtr, limit)
 	if err != nil {
 		dto.RespondError(c, err)
 		return
 	}
 
-	// 6. Respond with success helper
 	dto.RespondSuccess(c, http.StatusOK, "Messages retrieved successfully", result)
 }

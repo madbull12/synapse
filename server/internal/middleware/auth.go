@@ -17,40 +17,40 @@ const (
 )
 
 func AuthRequired() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        var token string
+	return func(c *gin.Context) {
+		token := extractToken(c)
+		if token == "" {
+			dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Missing access token"))
+			c.Abort()
+			return
+		}
 
-        // 1. Try checking the Authorization header first (used by Next.js SSR fetch)
-        authHeader := c.GetHeader("Authorization")
-        if strings.HasPrefix(authHeader, "Bearer ") {
-            token = strings.TrimPrefix(authHeader, "Bearer ")
-        }
+		claims, err := utils.ValidateToken(token)
+		if err != nil {
+			dto.RespondError(c, apperr.Unauthorized("TOKEN_EXPIRED", "Session expired or invalid."))
+			c.Abort()
+			return
+		}
 
-        // 2. If no header is present, fallback to checking the HttpOnly cookie (used by Client fetch)
-        if token == "" {
-            cookieToken, err := c.Cookie("access_token")
-            if err == nil {
-                token = cookieToken
-            }
-        }
+		c.Set(ContextUserIDKey, claims.UserID)
+		c.Set(ContextUserEmailKey, claims.Email)
+		c.Next()
+	}
+}
 
-        // 3. If neither exists, reject with 401
-        if token == "" {
-            dto.RespondError(c, apperr.Unauthorized("UNAUTHORIZED", "Missing access token"))
-            c.Abort()
-            return
-        }
+func extractToken(c *gin.Context) string {
+	authHeader := c.GetHeader("Authorization")
+	if strings.HasPrefix(authHeader, "Bearer ") {
+		return strings.TrimPrefix(authHeader, "Bearer ")
+	}
 
-        // 4. Validate the token string
-        claims, err := utils.ValidateToken(token)
-        if err != nil {
-            dto.RespondError(c, apperr.Unauthorized("TOKEN_EXPIRED", "Session expired or invalid."))
-            c.Abort()
-            return
-        }
+	if cookieToken, err := c.Cookie("access_token"); err == nil && cookieToken != "" {
+		return cookieToken
+	}
 
-        c.Set(ContextUserIDKey, claims.UserID)
-        c.Set(ContextUserEmailKey, claims.Email)
-        c.Next()
-    }
+	if queryToken := c.Query("token"); queryToken != "" {
+		return queryToken
+	}
+
+	return ""
 }

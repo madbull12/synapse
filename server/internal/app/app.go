@@ -6,12 +6,14 @@ import (
 	"time"
 
 	"server/internal/apperr"
+	"server/internal/apputil"
 	"server/internal/dto"
 	"server/internal/handlers"
 	"server/internal/middleware"
 	"server/internal/models"
 	"server/internal/repository"
 	"server/internal/service"
+	"server/internal/websocket"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
@@ -26,6 +28,8 @@ type Config struct {
 
 func Run(cfg *Config) {
 	db := initDB(cfg.DatabaseURL)
+	wsHub := websocket.NewHub()
+	go wsHub.Run()
 
 	authRepo := repository.NewAuthRepository(db)
 	authSrv := service.NewAuthService(authRepo)
@@ -48,20 +52,23 @@ func Run(cfg *Config) {
 	workspaceHandler := handlers.NewWorkspaceHandler(workspaceSrv)
 
 	messageRepo := repository.NewMessageRepository()
-	messageSrv := service.NewMessageService(db, messageRepo, channelRepo)
+	messageSrv := service.NewMessageService(db, messageRepo, channelRepo, wsHub)
 	messageHandler := handlers.NewMessageHandler(messageSrv)
+
+
 
 	r := gin.Default()
 	r.NoRoute(func(c *gin.Context) {
 		dto.RespondError(c, apperr.NotFound("NOT_FOUND", "The requested endpoint does not exist"))
 	})
 	setupCORS(r)
-	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler, messageHandler)
+	setupRoutes(r, authHandler, userHandler, workspaceHandler, channelHandler, workspaceMemberHandler, messageHandler,wsHub)
 
 	log.Printf("Synapse API server running live on port %s 🚀", cfg.Port)
 	if err := r.Run(":" + cfg.Port); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+
 }
 
 func initDB(dsn string) *gorm.DB {
@@ -108,7 +115,7 @@ func setupCORS(r *gin.Engine) {
 	})
 }
 
-func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler, message *handlers.MessageHandler) {
+func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserHandler, workspace *handlers.WorkspaceHandler, channel *handlers.ChannelHandler, workspaceMember *handlers.WorkspaceMemberHandler, message *handlers.MessageHandler,wsHub *websocket.Hub) {
 	v1 := r.Group("/api/v1")
 
 	publicAuth := v1.Group("/auth")
@@ -150,8 +157,19 @@ func setupRoutes(r *gin.Engine, auth *handlers.AuthHandler, user *handlers.UserH
 	channels := v1.Group("/channels", middleware.AuthRequired())
 	{
 		channels.GET("/:channelId/messages", message.HandleGetChannelMessages)
-
 		channels.POST("/:channelId/messages", message.HandleSendMessage)
+
+		channels.GET("/:channelId/ws", func(c *gin.Context) {
+			channelID := c.Param("channelId")
+
+			userIDUUID, err := apputil.GetUserID(c)
+			if err != nil {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized request"})
+				return
+			}
+
+			websocket.ServeWs(wsHub, c.Writer, c.Request, userIDUUID.String(), channelID)
+		})
 	}
 
 }
